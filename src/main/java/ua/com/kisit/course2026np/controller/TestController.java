@@ -24,7 +24,7 @@ public class TestController {
     // ============= USER ENDPOINTS =============
 
     /**
-     * GET http://localhost:8080/api/test/users
+     * GET <a href="http://localhost:8080/api/test/users">...</a>
      */
     @GetMapping("/users")
     public List<User> getAllUsers() {
@@ -32,7 +32,7 @@ public class TestController {
     }
 
     /**
-     * GET http://localhost:8080/api/test/users/1
+     * GET <a href="http://localhost:8080/api/test/users/1">...</a>
      */
     @GetMapping("/users/{id}")
     public User getUserById(@PathVariable Long id) {
@@ -41,7 +41,7 @@ public class TestController {
     }
 
     /**
-     * POST http://localhost:8080/api/test/users
+     * POST <a href="http://localhost:8080/api/test/users">...</a>
      * Body: {"firstName": "Іван", "lastName": "Петренко", "email": "ivan@test.com", "password": "123"}
      */
     @PostMapping("/users")
@@ -50,7 +50,7 @@ public class TestController {
     }
 
     /**
-     * DELETE http://localhost:8080/api/test/users/1
+     * DELETE <a href="http://localhost:8080/api/test/users/1">...</a>
      */
     @DeleteMapping("/users/{id}")
     public String deleteUser(@PathVariable Long id) {
@@ -61,7 +61,7 @@ public class TestController {
     // ============= ACCOUNT ENDPOINTS =============
 
     /**
-     * GET http://localhost:8080/api/test/accounts
+     * GET <a href="http://localhost:8080/api/test/accounts">...</a>
      */
     @GetMapping("/accounts")
     public List<Account> getAllAccounts() {
@@ -69,7 +69,7 @@ public class TestController {
     }
 
     /**
-     * GET http://localhost:8080/api/test/accounts/1/balance
+     * GET <a href="http://localhost:8080/api/test/accounts/1/balance">...</a>
      */
     @GetMapping("/accounts/{id}/balance")
     public BigDecimal getBalance(@PathVariable Long id) {
@@ -77,7 +77,7 @@ public class TestController {
     }
 
     /**
-     * POST http://localhost:8080/api/test/accounts/1/deposit
+     * POST <a href="http://localhost:8080/api/test/accounts/1/deposit">...</a>
      * Body: {"amount": 500.00}
      */
     @PostMapping("/accounts/{id}/deposit")
@@ -86,7 +86,7 @@ public class TestController {
     }
 
     /**
-     * POST http://localhost:8080/api/test/accounts/1/withdraw
+     * POST <a href="http://localhost:8080/api/test/accounts/1/withdraw">...</a>
      * Body: {"amount": 200.00}
      */
     @PostMapping("/accounts/{id}/withdraw")

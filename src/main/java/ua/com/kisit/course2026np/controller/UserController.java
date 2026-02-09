@@ -22,7 +22,7 @@ public class UserController {
 
     /**
      * CREATE - Створити нового користувача
-     * POST http://localhost:8080/api/users
+     * POST <a href="http://localhost:8080/api/users">...</a>
      * Body: {
      *   "firstName": "Іван",
      *   "lastName": "Петренко",
@@ -39,7 +39,7 @@ public class UserController {
 
     /**
      * READ - Отримати всіх користувачів
-     * GET http://localhost:8080/api/users
+     * GET <a href="http://localhost:8080/api/users">...</a>
      */
     @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {
@@ -49,7 +49,7 @@ public class UserController {
 
     /**
      * READ - Отримати користувача за ID
-     * GET http://localhost:8080/api/users/1
+     * GET <a href="http://localhost:8080/api/users/1">...</a>
      */
     @GetMapping("/{id}")
     public ResponseEntity<User> getUserById(@PathVariable Long id) {
@@ -60,7 +60,7 @@ public class UserController {
 
     /**
      * READ - Отримати користувача за email
-     * GET http://localhost:8080/api/users/email/ivan@example.com
+     * GET <a href="http://localhost:8080/api/users/email/ivan@example.com">...</a>
      */
     @GetMapping("/email/{email}")
     public ResponseEntity<User> getUserByEmail(@PathVariable String email) {
@@ -71,7 +71,7 @@ public class UserController {
 
     /**
      * READ - Отримати користувачів за роллю
-     * GET http://localhost:8080/api/users/role/CLIENT
+     * GET <a href="http://localhost:8080/api/users/role/CLIENT">...</a>
      */
     @GetMapping("/role/{role}")
     public ResponseEntity<List<User>> getUsersByRole(@PathVariable UserRole role) {
@@ -81,7 +81,7 @@ public class UserController {
 
     /**
      * READ - Отримати активних користувачів
-     * GET http://localhost:8080/api/users/active
+     * GET <a href="http://localhost:8080/api/users/active">...</a>
      */
     @GetMapping("/active")
     public ResponseEntity<List<User>> getActiveUsers() {
@@ -91,7 +91,7 @@ public class UserController {
 
     /**
      * UPDATE - Оновити користувача
-     * PUT http://localhost:8080/api/users/1
+     * PUT <a href="http://localhost:8080/api/users/1">...</a>
      * Body: {
      *   "firstName": "Іван",
      *   "lastName": "Сидоренко",
@@ -109,7 +109,7 @@ public class UserController {
 
     /**
      * UPDATE - Активувати користувача
-     * POST http://localhost:8080/api/users/1/activate
+     * POST <a href="http://localhost:8080/api/users/1/activate">...</a>
      */
     @PostMapping("/{id}/activate")
     public ResponseEntity<Void> activateUser(@PathVariable Long id) {
@@ -119,7 +119,7 @@ public class UserController {
 
     /**
      * UPDATE - Деактивувати користувача
-     * POST http://localhost:8080/api/users/1/deactivate
+     * POST <a href="http://localhost:8080/api/users/1/deactivate">...</a>
      */
     @PostMapping("/{id}/deactivate")
     public ResponseEntity<Void> deactivateUser(@PathVariable Long id) {
@@ -129,7 +129,7 @@ public class UserController {
 
     /**
      * DELETE - Видалити користувача
-     * DELETE http://localhost:8080/api/users/1
+     * DELETE <a href="http://localhost:8080/api/users/1">...</a>
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
@@ -139,7 +139,7 @@ public class UserController {
 
     /**
      * COUNT - Підрахувати всіх користувачів
-     * GET http://localhost:8080/api/users/count
+     * GET <a href="http://localhost:8080/api/users/count">...</a>
      */
     @GetMapping("/count")
     public ResponseEntity<Long> countUsers() {
@@ -149,7 +149,7 @@ public class UserController {
 
     /**
      * COUNT - Підрахувати активних користувачів
-     * GET http://localhost:8080/api/users/count/active
+     * GET <a href="http://localhost:8080/api/users/count/active">...</a>
      */
     @GetMapping("/count/active")
     public ResponseEntity<Long> countActiveUsers() {

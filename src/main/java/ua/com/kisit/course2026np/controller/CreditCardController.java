@@ -24,7 +24,7 @@ public class CreditCardController {
 
     /**
      * CREATE - Створити нову кредитну карту
-     * POST http://localhost:8080/api/cards
+     * POST <a href="http://localhost:8080/api/cards">...</a>
      * Body: {
      *   "cardNumber": "1234567890123456",
      *   "cardholderName": "IVAN PETRENKO",
@@ -41,7 +41,7 @@ public class CreditCardController {
 
     /**
      * READ - Отримати всі кредитні картки
-     * GET http://localhost:8080/api/cards
+     * GET <a href="http://localhost:8080/api/cards">...</a>
      */
     @GetMapping
     public ResponseEntity<List<CreditCard>> getAllCreditCards() {
@@ -51,7 +51,7 @@ public class CreditCardController {
 
     /**
      * READ - Отримати кредитну карту за ID
-     * GET http://localhost:8080/api/cards/1
+     * GET <a href="http://localhost:8080/api/cards/1">...</a>
      */
     @GetMapping("/{id}")
     public ResponseEntity<CreditCard> getCreditCardById(@PathVariable Long id) {
@@ -62,7 +62,7 @@ public class CreditCardController {
 
     /**
      * READ - Отримати кредитну карту за номером
-     * GET http://localhost:8080/api/cards/number/1234567890123456
+     * GET <a href="http://localhost:8080/api/cards/number/1234567890123456">...</a>
      */
     @GetMapping("/number/{cardNumber}")
     public ResponseEntity<CreditCard> getCreditCardByNumber(@PathVariable String cardNumber) {
@@ -73,7 +73,7 @@ public class CreditCardController {
 
     /**
      * READ - Отримати картки користувача
-     * GET http://localhost:8080/api/cards/user/1
+     * GET <a href="http://localhost:8080/api/cards/user/1">...</a>
      */
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<CreditCard>> getCreditCardsByUser(@PathVariable Long userId) {
@@ -85,7 +85,7 @@ public class CreditCardController {
 
     /**
      * READ - Отримати замаскований номер карти
-     * GET http://localhost:8080/api/cards/1/masked
+     * GET <a href="http://localhost:8080/api/cards/1/masked">...</a>
      */
     @GetMapping("/{id}/masked")
     public ResponseEntity<String> getMaskedCardNumber(@PathVariable Long id) {
@@ -95,7 +95,7 @@ public class CreditCardController {
 
     /**
      * READ - Перевірити чи карта прострочена
-     * GET http://localhost:8080/api/cards/1/expired
+     * GET <a href="http://localhost:8080/api/cards/1/expired">...</a>
      */
     @GetMapping("/{id}/expired")
     public ResponseEntity<Boolean> isExpired(@PathVariable Long id) {
@@ -105,7 +105,7 @@ public class CreditCardController {
 
     /**
      * UPDATE - Оновити дані карти
-     * PUT http://localhost:8080/api/cards/1
+     * PUT <a href="http://localhost:8080/api/cards/1">...</a>
      * Body: {
      *   "cardholderName": "IVAN SYDORENKO",
      *   "expiryDate": "2028-12-31"
@@ -122,7 +122,7 @@ public class CreditCardController {
 
     /**
      * UPDATE - Активувати карту
-     * POST http://localhost:8080/api/cards/1/activate
+     * POST <a href="http://localhost:8080/api/cards/1/activate">...</a>
      */
     @PostMapping("/{id}/activate")
     public ResponseEntity<Void> activateCreditCard(@PathVariable Long id) {
@@ -132,7 +132,7 @@ public class CreditCardController {
 
     /**
      * UPDATE - Деактивувати карту
-     * POST http://localhost:8080/api/cards/1/deactivate
+     * POST <a href="http://localhost:8080/api/cards/1/deactivate">...</a>
      */
     @PostMapping("/{id}/deactivate")
     public ResponseEntity<Void> deactivateCreditCard(@PathVariable Long id) {
@@ -142,7 +142,7 @@ public class CreditCardController {
 
     /**
      * DELETE - Видалити карту
-     * DELETE http://localhost:8080/api/cards/1
+     * DELETE <a href="http://localhost:8080/api/cards/1">...</a>
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCreditCard(@PathVariable Long id) {
@@ -152,7 +152,7 @@ public class CreditCardController {
 
     /**
      * COUNT - Підрахувати всі картки
-     * GET http://localhost:8080/api/cards/count
+     * GET <a href="http://localhost:8080/api/cards/count">...</a>
      */
     @GetMapping("/count")
     public ResponseEntity<Long> countCreditCards() {
@@ -162,7 +162,7 @@ public class CreditCardController {
 
     /**
      * COUNT - Підрахувати активні картки
-     * GET http://localhost:8080/api/cards/count/active
+     * GET <a href="http://localhost:8080/api/cards/count/active">...</a>
      */
     @GetMapping("/count/active")
     public ResponseEntity<Long> countActiveCards() {

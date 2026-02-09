@@ -1,6 +1,8 @@
 package ua.com.kisit.course2026np.controller;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +25,7 @@ public class AccountController {
 
     /**
      * CREATE - Створити новий рахунок
-     * POST http://localhost:8080/api/accounts
+     * POST <a href="http://localhost:8080/api/accounts">...</a>
      * Body: {
      *   "accountNumber": "12345678901234567890",
      *   "balance": 1000.00,
@@ -39,7 +41,7 @@ public class AccountController {
 
     /**
      * READ - Отримати всі рахунки
-     * GET http://localhost:8080/api/accounts
+     * GET <a href="http://localhost:8080/api/accounts">...</a>
      */
     @GetMapping
     public ResponseEntity<List<Account>> getAllAccounts() {
@@ -49,7 +51,7 @@ public class AccountController {
 
     /**
      * READ - Отримати рахунок за ID
-     * GET http://localhost:8080/api/accounts/1
+     * GET <a href="http://localhost:8080/api/accounts/1">...</a>
      */
     @GetMapping("/{id}")
     public ResponseEntity<Account> getAccountById(@PathVariable Long id) {
@@ -60,7 +62,7 @@ public class AccountController {
 
     /**
      * READ - Отримати рахунок за номером
-     * GET http://localhost:8080/api/accounts/number/12345678901234567890
+     * GET <a href="http://localhost:8080/api/accounts/number/12345678901234567890">...</a>
      */
     @GetMapping("/number/{accountNumber}")
     public ResponseEntity<Account> getAccountByNumber(@PathVariable String accountNumber) {
@@ -71,7 +73,7 @@ public class AccountController {
 
     /**
      * READ - Отримати рахунок за ID картки
-     * GET http://localhost:8080/api/accounts/card/1
+     * GET <a href="http://localhost:8080/api/accounts/card/1">...</a>
      */
     @GetMapping("/card/{cardId}")
     public ResponseEntity<Account> getAccountByCardId(@PathVariable Long cardId) {
@@ -82,7 +84,7 @@ public class AccountController {
 
     /**
      * READ - Отримати рахунки за статусом
-     * GET http://localhost:8080/api/accounts/status/ACTIVE
+     * GET <a href="http://localhost:8080/api/accounts/status/ACTIVE">...</a>
      */
     @GetMapping("/status/{status}")
     public ResponseEntity<List<Account>> getAccountsByStatus(@PathVariable AccountStatus status) {
@@ -92,7 +94,7 @@ public class AccountController {
 
     /**
      * READ - Отримати баланс рахунку
-     * GET http://localhost:8080/api/accounts/1/balance
+     * GET <a href="http://localhost:8080/api/accounts/1/balance">...</a>
      */
     @GetMapping("/{id}/balance")
     public ResponseEntity<BigDecimal> getBalance(@PathVariable Long id) {
@@ -102,7 +104,7 @@ public class AccountController {
 
     /**
      * UPDATE - Поповнити рахунок
-     * POST http://localhost:8080/api/accounts/1/deposit
+     * POST <a href="http://localhost:8080/api/accounts/1/deposit">...</a>
      * Body: {"amount": 500.00}
      */
     @PostMapping("/{id}/deposit")
@@ -116,7 +118,7 @@ public class AccountController {
 
     /**
      * UPDATE - Зняти кошти з рахунку
-     * POST http://localhost:8080/api/accounts/1/withdraw
+     * POST <a href="http://localhost:8080/api/accounts/1/withdraw">...</a>
      * Body: {"amount": 200.00}
      */
     @PostMapping("/{id}/withdraw")
@@ -130,7 +132,7 @@ public class AccountController {
 
     /**
      * UPDATE - Заблокувати рахунок
-     * POST http://localhost:8080/api/accounts/1/block
+     * POST <a href="http://localhost:8080/api/accounts/1/block">...</a>
      */
     @PostMapping("/{id}/block")
     public ResponseEntity<Void> blockAccount(@PathVariable Long id) {
@@ -140,7 +142,7 @@ public class AccountController {
 
     /**
      * UPDATE - Розблокувати рахунок
-     * POST http://localhost:8080/api/accounts/1/unblock
+     * POST <a href="http://localhost:8080/api/accounts/1/unblock">...</a>
      */
     @PostMapping("/{id}/unblock")
     public ResponseEntity<Void> unblockAccount(@PathVariable Long id) {
@@ -150,7 +152,7 @@ public class AccountController {
 
     /**
      * DELETE - Видалити рахунок
-     * DELETE http://localhost:8080/api/accounts/1
+     * DELETE <a href="http://localhost:8080/api/accounts/1">...</a>
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAccount(@PathVariable Long id) {
@@ -160,27 +162,17 @@ public class AccountController {
 
     // ============= DTO CLASSES =============
 
+    @Setter
+    @Getter
     public static class DepositRequest {
         private BigDecimal amount;
 
-        public BigDecimal getAmount() {
-            return amount;
-        }
-
-        public void setAmount(BigDecimal amount) {
-            this.amount = amount;
-        }
     }
 
+    @Setter
+    @Getter
     public static class WithdrawRequest {
         private BigDecimal amount;
 
-        public BigDecimal getAmount() {
-            return amount;
-        }
-
-        public void setAmount(BigDecimal amount) {
-            this.amount = amount;
-        }
     }
 }

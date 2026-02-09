@@ -1,6 +1,8 @@
 package ua.com.kisit.course2026np.controller;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,7 +27,7 @@ public class PaymentController {
 
     /**
      * CREATE - Створити новий платіж (без виконання)
-     * POST http://localhost:8080/api/payments
+     * POST <a href="http://localhost:8080/api/payments">...</a>
      * Body: {
      *   "account": {"id": 1},
      *   "amount": 100.00,
@@ -42,7 +44,7 @@ public class PaymentController {
 
     /**
      * CREATE - Виконати платіж (списання коштів)
-     * POST http://localhost:8080/api/payments/execute
+     * POST <a href="http://localhost:8080/api/payments/execute">...</a>
      * Body: {
      *   "accountId": 1,
      *   "payment": {
@@ -64,7 +66,7 @@ public class PaymentController {
 
     /**
      * CREATE - Виконати поповнення
-     * POST http://localhost:8080/api/payments/replenish
+     * POST <a href="http://localhost:8080/api/payments/replenish">...</a>
      * Body: {
      *   "accountId": 1,
      *   "payment": {
@@ -86,7 +88,7 @@ public class PaymentController {
 
     /**
      * READ - Отримати всі платежі
-     * GET http://localhost:8080/api/payments
+     * GET <a href="http://localhost:8080/api/payments">...</a>
      */
     @GetMapping
     public ResponseEntity<List<Payment>> getAllPayments() {
@@ -96,7 +98,7 @@ public class PaymentController {
 
     /**
      * READ - Отримати платіж за ID
-     * GET http://localhost:8080/api/payments/1
+     * GET <a href="http://localhost:8080/api/payments/1">...</a>
      */
     @GetMapping("/{id}")
     public ResponseEntity<Payment> getPaymentById(@PathVariable Long id) {
@@ -107,7 +109,7 @@ public class PaymentController {
 
     /**
      * READ - Отримати платежі рахунку
-     * GET http://localhost:8080/api/payments/account/1
+     * GET <a href="http://localhost:8080/api/payments/account/1">...</a>
      */
     @GetMapping("/account/{accountId}")
     public ResponseEntity<List<Payment>> getPaymentsByAccount(@PathVariable Long accountId) {
@@ -119,7 +121,7 @@ public class PaymentController {
 
     /**
      * READ - Отримати платежі рахунку (відсортовані)
-     * GET http://localhost:8080/api/payments/account/1/ordered
+     * GET <a href="http://localhost:8080/api/payments/account/1/ordered">...</a>
      */
     @GetMapping("/account/{accountId}/ordered")
     public ResponseEntity<List<Payment>> getPaymentsByAccountOrdered(@PathVariable Long accountId) {
@@ -131,7 +133,7 @@ public class PaymentController {
 
     /**
      * READ - Отримати платежі за статусом
-     * GET http://localhost:8080/api/payments/status/COMPLETED
+     * GET <a href="http://localhost:8080/api/payments/status/COMPLETED">...</a>
      */
     @GetMapping("/status/{status}")
     public ResponseEntity<List<Payment>> getPaymentsByStatus(@PathVariable PaymentStatus status) {
@@ -141,7 +143,7 @@ public class PaymentController {
 
     /**
      * DELETE - Видалити платіж
-     * DELETE http://localhost:8080/api/payments/1
+     * DELETE <a href="http://localhost:8080/api/payments/1">...</a>
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePayment(@PathVariable Long id) {
@@ -151,7 +153,7 @@ public class PaymentController {
 
     /**
      * COUNT - Підрахувати всі платежі
-     * GET http://localhost:8080/api/payments/count
+     * GET <a href="http://localhost:8080/api/payments/count">...</a>
      */
     @GetMapping("/count")
     public ResponseEntity<Long> countPayments() {
@@ -161,7 +163,7 @@ public class PaymentController {
 
     /**
      * COUNT - Підрахувати платежі за статусом
-     * GET http://localhost:8080/api/payments/count/status/COMPLETED
+     * GET <a href="http://localhost:8080/api/payments/count/status/COMPLETED">...</a>
      */
     @GetMapping("/count/status/{status}")
     public ResponseEntity<Long> countPaymentsByStatus(@PathVariable PaymentStatus status) {
@@ -171,24 +173,11 @@ public class PaymentController {
 
     // ============= DTO CLASSES =============
 
+    @Setter
+    @Getter
     public static class ExecutePaymentRequest {
         private Long accountId;
         private Payment payment;
 
-        public Long getAccountId() {
-            return accountId;
-        }
-
-        public void setAccountId(Long accountId) {
-            this.accountId = accountId;
-        }
-
-        public Payment getPayment() {
-            return payment;
-        }
-
-        public void setPayment(Payment payment) {
-            this.payment = payment;
-        }
     }
 }
