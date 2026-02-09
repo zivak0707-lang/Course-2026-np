@@ -1,5 +1,7 @@
 package ua.com.kisit.course2026np.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -48,9 +50,11 @@ public class Account {
 
     @OneToOne
     @JoinColumn(name = "card_id", unique = true, nullable = false)
+    @JsonBackReference("card-account")
     private CreditCard creditCard;
 
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @JsonManagedReference("account-payments")
     @Builder.Default
     private List<Payment> payments = new ArrayList<>();
 

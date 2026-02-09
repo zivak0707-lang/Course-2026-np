@@ -1,5 +1,6 @@
 package ua.com.kisit.course2026np.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -64,6 +65,7 @@ public class User {
     private Boolean isActive = true;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @JsonManagedReference("user-cards")
     @Builder.Default
     private List<CreditCard> creditCards = new ArrayList<>();
 

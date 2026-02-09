@@ -1,5 +1,7 @@
 package ua.com.kisit.course2026np.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -8,7 +10,6 @@ import lombok.Builder;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Future;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -41,7 +42,6 @@ public class CreditCard {
     @Column(nullable = false, name = "cardholder_name", length = 100)
     private String cardholderName;
 
-    @Future(message = "Термін дії карти має бути в майбутньому")
     @Column(nullable = false, name = "expiry_date")
     private LocalDate expiryDate;
 
@@ -52,9 +52,11 @@ public class CreditCard {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonBackReference("user-cards")
     private User user;
 
     @OneToOne(mappedBy = "creditCard", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("card-account")
     private Account account;
 
     @Column(nullable = false, name = "is_active")
@@ -87,7 +89,6 @@ public class CreditCard {
         return LocalDate.now().isAfter(expiryDate)
                 || LocalDate.now().isEqual(expiryDate);
     }
-
 
     /**
      * Отримати замасковану версію номера карти

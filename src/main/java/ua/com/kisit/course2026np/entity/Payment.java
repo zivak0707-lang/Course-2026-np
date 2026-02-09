@@ -1,5 +1,6 @@
 package ua.com.kisit.course2026np.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -36,6 +37,7 @@ public class Payment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false)
+    @JsonBackReference("account-payments")
     private Account account;
 
     @NotNull(message = "Сума платежу обов'язкова")
