@@ -2,28 +2,18 @@ package ua.com.kisit.course2026np.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-
 import jakarta.persistence.*;
-import jakarta.validation.constraints.DecimalMin;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Сутність рахунку
- * Представляє банківський рахунок, прив'язаний до кредитної карти
- */
 @Entity
 @Table(name = "accounts", indexes = {
         @Index(name = "idx_account_number", columnList = "account_number"),
-        @Index(name = "idx_account_status", columnList = "status"),
-        @Index(name = "idx_account_card", columnList = "card_id")
+        @Index(name = "idx_account_status", columnList = "status")
 })
 @Data
 @NoArgsConstructor
@@ -35,10 +25,9 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false, length = 20, name = "account_number")
+    @Column(name = "account_number", nullable = false, unique = true, length = 20)
     private String accountNumber;
 
-    @DecimalMin(value = "0.0", message = "Баланс не може бути від'ємним")
     @Column(nullable = false, precision = 19, scale = 2)
     @Builder.Default
     private BigDecimal balance = BigDecimal.ZERO;
@@ -48,98 +37,92 @@ public class Account {
     @Builder.Default
     private AccountStatus status = AccountStatus.ACTIVE;
 
-    @OneToOne
-    @JoinColumn(name = "card_id", unique = true, nullable = false)
-    @JsonBackReference("card-account")
+    /* ===================== RELATIONS ===================== */
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "card_id", nullable = false)
+    @JsonBackReference("card-accounts")
     private CreditCard creditCard;
 
-    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    @JsonManagedReference("account-payments")
+    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     @Builder.Default
     private List<Payment> payments = new ArrayList<>();
 
-    @Column(nullable = false, updatable = false, name = "created_at")
-    @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
+    /* ===================== AUDIT ===================== */
 
-    @Column(nullable = false, name = "updated_at")
-    @Builder.Default
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
 
-    /**
-     * Поповнення рахунку
-     */
-    public void deposit(BigDecimal amount) {
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Сума поповнення має бути більше нуля");
-        }
-        if (this.status != AccountStatus.ACTIVE) {
-            throw new IllegalStateException("Неможливо поповнити заблокований рахунок");
-        }
-        this.balance = this.balance.add(amount);
+    /* ===================== BUSINESS LOGIC ===================== */
+
+    public boolean isActive() {
+        return status == AccountStatus.ACTIVE;
     }
 
-    /**
-     * Зняття коштів з рахунку
-     */
-    public void withdraw(BigDecimal amount) {
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Сума зняття має бути більше нуля");
-        }
-        if (this.status != AccountStatus.ACTIVE) {
-            throw new IllegalStateException("Неможливо зняти кошти із заблокованого рахунку");
-        }
-        if (this.balance.compareTo(amount) < 0) {
-            throw new IllegalStateException("Недостатньо коштів на рахунку");
-        }
-        this.balance = this.balance.subtract(amount);
-    }
-
-    /**
-     * Блокування рахунку
-     */
     public void block() {
         this.status = AccountStatus.BLOCKED;
     }
 
-    /**
-     * Розблокування рахунку
-     */
     public void unblock() {
         this.status = AccountStatus.ACTIVE;
     }
 
-    /**
-     * Перевірка чи рахунок активний
-     */
-    public boolean isActive() {
-        return this.status == AccountStatus.ACTIVE;
+    public void deposit(BigDecimal amount) {
+        validateAmount(amount);
+
+        if (status == AccountStatus.BLOCKED) {
+            throw new IllegalStateException("Рахунок заблокований");
+        }
+
+        balance = balance.add(amount);
     }
 
-    /**
-     * Додати платіж до рахунку
-     */
+    public void withdraw(BigDecimal amount) {
+        validateAmount(amount);
+
+        if (status == AccountStatus.BLOCKED) {
+            throw new IllegalStateException("Рахунок заблокований");
+        }
+
+        if (balance.compareTo(amount) < 0) {
+            throw new IllegalStateException("Недостатньо коштів");
+        }
+
+        balance = balance.subtract(amount);
+    }
+
+    /* ===================== PAYMENTS ===================== */
+
     public void addPayment(Payment payment) {
         payments.add(payment);
         payment.setAccount(this);
     }
 
-    /**
-     * Видалити платіж з рахунку
-     */
     public void removePayment(Payment payment) {
         payments.remove(payment);
         payment.setAccount(null);
+    }
+
+    /* ===================== HELPERS ===================== */
+
+    private void validateAmount(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Сума має бути більшою за нуль");
+        }
     }
 }

@@ -4,21 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import ua.com.kisit.course2026np.entity.User;
-import ua.com.kisit.course2026np.entity.Account;
-import ua.com.kisit.course2026np.entity.Payment;
-import ua.com.kisit.course2026np.entity.CreditCard;
-import ua.com.kisit.course2026np.repository.UserRepository;
-import ua.com.kisit.course2026np.repository.AccountRepository;
-import ua.com.kisit.course2026np.repository.PaymentRepository;
-import ua.com.kisit.course2026np.repository.CreditCardRepository;
+import ua.com.kisit.course2026np.entity.*;
+import ua.com.kisit.course2026np.repository.*;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-/**
- * Контролер для клієнтського кабінету
- */
 @Controller
 @RequestMapping("/dashboard")
 @RequiredArgsConstructor
@@ -29,28 +20,20 @@ public class ClientController {
     private final PaymentRepository paymentRepository;
     private final CreditCardRepository creditCardRepository;
 
-    /**
-     * Головна сторінка дашборду
-     */
-    @GetMapping
+    @GetMapping({"", "/"})
     public String dashboard(Model model) {
-        // TODO: Отримати поточного користувача з Security Context
-        // Поки що використовуємо першого користувача як приклад
-        User user = userRepository.findAll().stream()
-                .findFirst()
-                .orElse(createDemoUser());
+        User user = getDemoUser();
 
-        // Розрахунок статистики
-        List<Account> accounts = accountRepository.findAll(); // TODO: фільтрувати по user
+        List<Account> accounts = accountRepository.findAll();
         BigDecimal totalBalance = accounts.stream()
                 .map(Account::getBalance)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        long activeCards = creditCardRepository.count(); // TODO: фільтрувати по user
-        
-        List<Payment> allPayments = paymentRepository.findAll(); // TODO: фільтрувати по user
+        long activeCards = creditCardRepository.count();
+
+        List<Payment> allPayments = paymentRepository.findAll();
         long pendingCount = allPayments.stream()
-                .filter(p -> p.getStatus() == ua.com.kisit.course2026np.entity.PaymentStatus.PENDING)
+                .filter(p -> p.getStatus() == PaymentStatus.PENDING)
                 .count();
 
         BigDecimal monthlySpending = allPayments.stream()
@@ -59,12 +42,10 @@ public class ClientController {
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
                 .abs();
 
-        // Останні 5 транзакцій
         List<Payment> recentTransactions = allPayments.stream()
                 .limit(5)
                 .toList();
 
-        // Передача даних в шаблон
         model.addAttribute("user", user);
         model.addAttribute("totalBalance", formatCurrency(totalBalance));
         model.addAttribute("activeCards", activeCards);
@@ -75,9 +56,6 @@ public class ClientController {
         return "client/dashboard";
     }
 
-    /**
-     * Сторінка рахунків
-     */
     @GetMapping("/accounts")
     public String accounts(Model model) {
         List<Account> accounts = accountRepository.findAll();
@@ -85,9 +63,6 @@ public class ClientController {
         return "client/accounts";
     }
 
-    /**
-     * Сторінка карток
-     */
     @GetMapping("/cards")
     public String cards(Model model) {
         List<CreditCard> cards = creditCardRepository.findAll();
@@ -95,9 +70,6 @@ public class ClientController {
         return "client/cards";
     }
 
-    /**
-     * Сторінка платежів
-     */
     @GetMapping("/payment")
     public String payment(Model model) {
         List<Account> accounts = accountRepository.findAll();
@@ -105,9 +77,6 @@ public class ClientController {
         return "client/payment";
     }
 
-    /**
-     * Сторінка історії транзакцій
-     */
     @GetMapping("/transactions")
     public String transactions(Model model) {
         List<Payment> payments = paymentRepository.findAll();
@@ -115,31 +84,28 @@ public class ClientController {
         return "client/transactions";
     }
 
-    /**
-     * Сторінка налаштувань
-     */
     @GetMapping("/settings")
     public String settings(Model model) {
-        User user = userRepository.findAll().stream()
-                .findFirst()
-                .orElse(createDemoUser());
+        User user = getDemoUser();
         model.addAttribute("user", user);
         return "client/settings";
     }
-
-    // Допоміжні методи
 
     private String formatCurrency(BigDecimal amount) {
         return String.format("$%,.2f", amount);
     }
 
-    private User createDemoUser() {
-        User user = new User();
-        user.setFirstName("John");
-        user.setLastName("Doe");
-        user.setEmail("john.doe@example.com");
-        user.setRole(ua.com.kisit.course2026np.entity.UserRole.CLIENT);
-        user.setIsActive(true);
-        return user;
+    private User getDemoUser() {
+        return userRepository.findAll().stream()
+                .filter(u -> u.getRole() == UserRole.CLIENT)
+                .findFirst()
+                .orElseGet(() -> {
+                    User demo = new User();
+                    demo.setFirstName("Іван");
+                    demo.setLastName("Петренко");
+                    demo.setEmail("user@example.com");
+                    demo.setRole(UserRole.CLIENT);
+                    return demo;
+                });
     }
 }

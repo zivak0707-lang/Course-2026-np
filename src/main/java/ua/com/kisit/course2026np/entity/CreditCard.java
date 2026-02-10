@@ -2,22 +2,16 @@ package ua.com.kisit.course2026np.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
-/**
- * Сутність кредитної карти
- * Зберігає інформацію про платіжну карту клієнта
- */
 @Entity
 @Table(name = "credit_cards", indexes = {
         @Index(name = "idx_card_number", columnList = "card_number"),
@@ -33,20 +27,20 @@ public class CreditCard {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Номер карти обов'язковий")
-    @Pattern(regexp = "\\d{16}", message = "Номер карти має містити 16 цифр")
-    @Column(unique = true, nullable = false, length = 16, name = "card_number")
+    @NotBlank
+    @Pattern(regexp = "\\d{16}")
+    @Column(name = "card_number", nullable = false, unique = true, length = 16)
     private String cardNumber;
 
-    @NotBlank(message = "Ім'я власника обов'язкове")
-    @Column(nullable = false, name = "cardholder_name", length = 100)
+    @NotBlank
+    @Column(name = "cardholder_name", nullable = false)
     private String cardholderName;
 
-    @Column(nullable = false, name = "expiry_date")
+    @Column(nullable = false)
     private LocalDate expiryDate;
 
-    @NotBlank(message = "CVV обов'язковий")
-    @Pattern(regexp = "\\d{3}", message = "CVV має містити 3 цифри")
+    @NotBlank
+    @Pattern(regexp = "\\d{3}")
     @Column(nullable = false, length = 3)
     private String cvv;
 
@@ -55,57 +49,64 @@ public class CreditCard {
     @JsonBackReference("user-cards")
     private User user;
 
-    @OneToOne(mappedBy = "creditCard", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference("card-account")
-    private Account account;
+    // ОДНА КАРТА → БАГАТО РАХУНКІВ
+    @OneToMany(mappedBy = "creditCard", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("card-accounts")
+    @Builder.Default
+    private List<Account> accounts = new ArrayList<>();
 
-    @Column(nullable = false, name = "is_active")
+    @Column(nullable = false)
     @Builder.Default
     private Boolean isActive = true;
 
-    @Column(nullable = false, updatable = false, name = "created_at")
-    @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
-    @Column(nullable = false, name = "updated_at")
-    @Builder.Default
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
+    /* ===================== JPA LIFECYCLE ===================== */
 
     @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+    void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+    void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 
-    /**
-     * Перевірка чи карта не прострочена
-     */
+    /* ===================== BUSINESS LOGIC ===================== */
+
     public boolean isExpired() {
-        return LocalDate.now().isAfter(expiryDate)
-                || LocalDate.now().isEqual(expiryDate);
+        return expiryDate.isBefore(LocalDate.now());
     }
 
-    /**
-     * Отримати замасковану версію номера карти
-     */
     public String getMaskedCardNumber() {
-        if (cardNumber == null || cardNumber.length() != 16) {
+        if (cardNumber == null || cardNumber.length() < 4) {
             return "";
         }
-        return "**** **** **** " + cardNumber.substring(12);
+        return "**** **** **** " + cardNumber.substring(cardNumber.length() - 4);
+    }
+
+    /* ===================== TEST HELPERS (FIX) ===================== */
+
+    /**
+     * Для тестів: повертає перший рахунок (якщо є)
+     */
+    public Account getAccount() {
+        return accounts.isEmpty() ? null : accounts.get(0);
     }
 
     /**
-     * Встановити зв'язок з рахунком
+     * Для тестів: встановлює єдиний рахунок
      */
     public void setAccount(Account account) {
-        this.account = account;
+        accounts.clear();
         if (account != null) {
+            accounts.add(account);
             account.setCreditCard(this);
         }
     }

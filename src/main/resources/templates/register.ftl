@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Реєстрація - PayFlow</title>
-    
+
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -34,9 +35,9 @@
                             <!-- Progress Indicator -->
                             <div class="mb-4">
                                 <div class="d-flex justify-content-between mb-2">
-                                    <span class="badge bg-primary" id="step-1">1. Особисті дані</span>
-                                    <span class="badge bg-secondary" id="step-2">2. Пароль</span>
-                                    <span class="badge bg-secondary" id="step-3">3. Завершення</span>
+                                    <span class="badge bg-primary" id="step-badge-1">1. Особисті дані</span>
+                                    <span class="badge bg-secondary" id="step-badge-2">2. Пароль</span>
+                                    <span class="badge bg-secondary" id="step-badge-3">3. Завершення</span>
                                 </div>
                                 <div class="progress" style="height: 4px;">
                                     <div class="progress-bar bg-primary" id="progress-bar" role="progressbar" 
@@ -45,9 +46,9 @@
                             </div>
 
                             <!-- Registration Form -->
-                            <form action="/register" method="POST" id="registerForm" class="needs-validation" novalidate>
+                            <form action="/register" method="POST" id="registerForm" novalidate>
                                 <!-- Step 1: Personal Info -->
-                                <div id="step-1-content">
+                                <div id="step-content-1">
                                     <div class="mb-3">
                                         <label for="firstName" class="form-label">Ім'я *</label>
                                         <input type="text" class="form-control" id="firstName" name="firstName" 
@@ -69,13 +70,13 @@
                                         <div class="invalid-feedback">Введіть коректний email</div>
                                     </div>
 
-                                    <button type="button" class="btn btn-primary w-100" onclick="nextStep(2)">
+                                    <button type="button" class="btn btn-primary w-100" onclick="goToStep(2)">
                                         Далі <i class="bi bi-arrow-right ms-2"></i>
                                     </button>
                                 </div>
 
                                 <!-- Step 2: Password -->
-                                <div id="step-2-content" style="display: none;">
+                                <div id="step-content-2" style="display: none;">
                                     <div class="mb-3">
                                         <label for="password" class="form-label">Пароль *</label>
                                         <div class="position-relative">
@@ -99,21 +100,21 @@
                                                 <i class="bi bi-eye"></i>
                                             </button>
                                         </div>
-                                        <div class="invalid-feedback">Паролі не співпадають</div>
+                                        <div class="invalid-feedback" id="confirm-password-error">Паролі не співпадають</div>
                                     </div>
 
                                     <div class="d-flex gap-2">
-                                        <button type="button" class="btn btn-outline-secondary w-100" onclick="prevStep(1)">
+                                        <button type="button" class="btn btn-outline-secondary w-100" onclick="goToStep(1)">
                                             <i class="bi bi-arrow-left me-2"></i> Назад
                                         </button>
-                                        <button type="button" class="btn btn-primary w-100" onclick="nextStep(3)">
+                                        <button type="button" class="btn btn-primary w-100" onclick="goToStep(3)">
                                             Далі <i class="bi bi-arrow-right ms-2"></i>
                                         </button>
                                     </div>
                                 </div>
 
                                 <!-- Step 3: Confirmation -->
-                                <div id="step-3-content" style="display: none;">
+                                <div id="step-content-3" style="display: none;">
                                     <div class="text-center mb-4">
                                         <div class="mb-3">
                                             <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
@@ -145,7 +146,7 @@
                                     </div>
 
                                     <div class="d-flex gap-2">
-                                        <button type="button" class="btn btn-outline-secondary w-100" onclick="prevStep(2)">
+                                        <button type="button" class="btn btn-outline-secondary w-100" onclick="goToStep(2)">
                                             <i class="bi bi-arrow-left me-2"></i> Назад
                                         </button>
                                         <button type="submit" class="btn btn-success w-100">
@@ -167,79 +168,158 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/main.js"></script>
+    <script src="/static/js/main.js"></script>
     <script>
         let currentStep = 1;
 
-        function nextStep(step) {
-            // Validate current step
-            if (currentStep === 1) {
-                const firstName = document.getElementById('firstName');
-                const lastName = document.getElementById('lastName');
-                const email = document.getElementById('email');
-                
-                if (!firstName.value || !lastName.value || !email.value || !email.validity.valid) {
-                    document.getElementById('registerForm').classList.add('was-validated');
+        function goToStep(targetStep) {
+            // Validate current step before moving forward
+            if (targetStep > currentStep) {
+                if (currentStep === 1 && !validateStep1()) {
                     return;
                 }
-            }
-            
-            if (currentStep === 2) {
-                const password = document.getElementById('password');
-                const confirmPassword = document.getElementById('confirmPassword');
-                
-                if (!password.value || password.value.length < 8) {
-                    document.getElementById('registerForm').classList.add('was-validated');
+                if (currentStep === 2 && !validateStep2()) {
                     return;
                 }
-                
-                if (password.value !== confirmPassword.value) {
-                    confirmPassword.setCustomValidity('Паролі не співпадають');
-                    document.getElementById('registerForm').classList.add('was-validated');
-                    return;
-                }
-                confirmPassword.setCustomValidity('');
-                
-                // Update summary
-                document.getElementById('summary-name').textContent = 
-                    document.getElementById('firstName').value + ' ' + document.getElementById('lastName').value;
-                document.getElementById('summary-email').textContent = document.getElementById('email').value;
             }
 
             // Hide current step
-            document.getElementById(`step-${currentStep}-content`).style.display = 'none';
-            document.getElementById(`step-${currentStep}`).classList.remove('bg-primary');
-            document.getElementById(`step-${currentStep}`).classList.add('bg-secondary');
+            document.getElementById('step-content-' + currentStep).style.display = 'none';
+            document.getElementById('step-badge-' + currentStep).classList.remove('bg-primary');
+            document.getElementById('step-badge-' + currentStep).classList.add('bg-secondary');
 
-            // Show next step
-            currentStep = step;
-            document.getElementById(`step-${currentStep}-content`).style.display = 'block';
-            document.getElementById(`step-${currentStep}`).classList.remove('bg-secondary');
-            document.getElementById(`step-${currentStep}`).classList.add('bg-primary');
+            // Show target step
+            currentStep = targetStep;
+            document.getElementById('step-content-' + currentStep).style.display = 'block';
+            document.getElementById('step-badge-' + currentStep).classList.remove('bg-secondary');
+            document.getElementById('step-badge-' + currentStep).classList.add('bg-primary');
 
             // Update progress bar
             const progress = (currentStep / 3) * 100;
             document.getElementById('progress-bar').style.width = progress + '%';
-            document.getElementById('progress-bar').setAttribute('aria-valuenow', progress);
+
+            // Update summary if moving to step 3
+            if (currentStep === 3) {
+                updateSummary();
+            }
         }
 
-        function prevStep(step) {
-            // Hide current step
-            document.getElementById(`step-${currentStep}-content`).style.display = 'none';
-            document.getElementById(`step-${currentStep}`).classList.remove('bg-primary');
-            document.getElementById(`step-${currentStep}`).classList.add('bg-secondary');
+        function validateStep1() {
+            const firstName = document.getElementById('firstName');
+            const lastName = document.getElementById('lastName');
+            const email = document.getElementById('email');
 
-            // Show previous step
-            currentStep = step;
-            document.getElementById(`step-${currentStep}-content`).style.display = 'block';
-            document.getElementById(`step-${currentStep}`).classList.remove('bg-secondary');
-            document.getElementById(`step-${currentStep}`).classList.add('bg-primary');
+            let isValid = true;
 
-            // Update progress bar
-            const progress = (currentStep / 3) * 100;
-            document.getElementById('progress-bar').style.width = progress + '%';
-            document.getElementById('progress-bar').setAttribute('aria-valuenow', progress);
+            if (!firstName.value.trim()) {
+                firstName.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                firstName.classList.remove('is-invalid');
+            }
+
+            if (!lastName.value.trim()) {
+                lastName.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                lastName.classList.remove('is-invalid');
+            }
+
+            if (!email.value.trim() || !email.validity.valid) {
+                email.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                email.classList.remove('is-invalid');
+            }
+
+            return isValid;
         }
+
+        function validateStep2() {
+            const password = document.getElementById('password');
+            const confirmPassword = document.getElementById('confirmPassword');
+
+            let isValid = true;
+
+            if (!password.value || password.value.length < 8) {
+                password.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                password.classList.remove('is-invalid');
+            }
+
+            if (password.value !== confirmPassword.value) {
+                confirmPassword.classList.add('is-invalid');
+                document.getElementById('confirm-password-error').textContent = 'Паролі не співпадають';
+                isValid = false;
+            } else if (!confirmPassword.value || confirmPassword.value.length < 8) {
+                confirmPassword.classList.add('is-invalid');
+                document.getElementById('confirm-password-error').textContent = 'Пароль має містити мінімум 8 символів';
+                isValid = false;
+            } else {
+                confirmPassword.classList.remove('is-invalid');
+            }
+
+            return isValid;
+        }
+
+        function updateSummary() {
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const email = document.getElementById('email').value;
+
+            document.getElementById('summary-name').textContent = firstName + ' ' + lastName;
+            document.getElementById('summary-email').textContent = email;
+        }
+
+        // Real-time validation
+        document.getElementById('firstName').addEventListener('input', function() {
+            if (this.value.trim()) {
+                this.classList.remove('is-invalid');
+            }
+        });
+
+        document.getElementById('lastName').addEventListener('input', function() {
+            if (this.value.trim()) {
+                this.classList.remove('is-invalid');
+            }
+        });
+
+        document.getElementById('email').addEventListener('input', function() {
+            if (this.value.trim() && this.validity.valid) {
+                this.classList.remove('is-invalid');
+            }
+        });
+
+        document.getElementById('password').addEventListener('input', function() {
+            if (this.value.length >= 8) {
+                this.classList.remove('is-invalid');
+            }
+        });
+
+        document.getElementById('confirmPassword').addEventListener('input', function() {
+            const password = document.getElementById('password').value;
+            if (this.value === password && this.value.length >= 8) {
+                this.classList.remove('is-invalid');
+            }
+        });
+
+        // Form submission
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            const terms = document.getElementById('terms');
+            if (!terms.checked) {
+                e.preventDefault();
+                terms.classList.add('is-invalid');
+                terms.parentElement.querySelector('.invalid-feedback').style.display = 'block';
+            }
+        });
+
+        document.getElementById('terms').addEventListener('change', function() {
+            if (this.checked) {
+                this.classList.remove('is-invalid');
+                this.parentElement.querySelector('.invalid-feedback').style.display = 'none';
+            }
+        });
     </script>
 </body>
 </html>

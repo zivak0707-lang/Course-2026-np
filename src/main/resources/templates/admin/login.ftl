@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вхід - PayFlow</title>
+    <title>Вхід адміністратора - PayFlow</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
@@ -11,9 +11,8 @@
     <link href="/css/style.css" rel="stylesheet">
 </head>
 <body>
-    <div class="min-vh-100 d-flex align-items-center justify-content-center position-relative" style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(255, 255, 255, 1) 50%, rgba(37, 99, 235, 0.1) 100%);">
-        <div class="position-absolute" style="top: 5rem; right: 2.5rem; width: 18rem; height: 18rem; background: rgba(37, 99, 235, 0.1); border-radius: 50%; filter: blur(80px);"></div>
-        <div class="position-absolute" style="bottom: 2.5rem; left: 2.5rem; width: 14rem; height: 14rem; background: rgba(16, 185, 129, 0.1); border-radius: 50%; filter: blur(80px);"></div>
+    <div class="min-vh-100 d-flex align-items-center justify-content-center position-relative" 
+         style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 1) 100%);">
         
         <div class="container">
             <div class="row justify-content-center">
@@ -24,22 +23,13 @@
                             <div class="text-center mb-4">
                                 <a href="/" class="text-decoration-none">
                                     <div class="d-flex align-items-center justify-content-center gap-2 mb-3">
-                                        <i class="bi bi-wallet2 fs-3 text-primary"></i>
-                                        <span class="fs-4 fw-bold text-primary">PayFlow</span>
+                                        <i class="bi bi-shield-lock-fill fs-3 text-danger"></i>
+                                        <span class="fs-4 fw-bold text-dark">PayFlow Admin</span>
                                     </div>
                                 </a>
-                                <h4 class="fw-bold mb-2">Ласкаво просимо!</h4>
-                                <p class="text-muted small">Введіть дані для входу в обліковий запис</p>
+                                <h4 class="fw-bold mb-2">Панель адміністратора</h4>
+                                <p class="text-muted small">Введіть облікові дані адміністратора</p>
                             </div>
-
-                            <!-- Success message -->
-                            <#if success??>
-                                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                    <i class="bi bi-check-circle-fill me-2"></i>
-                                    ${success}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                </div>
-                            </#if>
 
                             <!-- Error message -->
                             <#if error??>
@@ -50,17 +40,25 @@
                                 </div>
                             </#if>
 
-                            <!-- Login Form -->
-                            <form action="/login" method="POST" id="loginForm">
+                            <!-- Admin Login Form -->
+                            <form action="/admin/login" method="POST" id="adminLoginForm">
                                 <div class="mb-3">
-                                    <label for="email" class="form-label">Email *</label>
-                                    <input type="email" class="form-control" id="email" name="email" 
-                                           placeholder="your@example.com" required>
+                                    <label for="email" class="form-label">Email адміністратора *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="bi bi-person-badge"></i>
+                                        </span>
+                                        <input type="email" class="form-control" id="email" name="email" 
+                                               placeholder="admin@payflow.com" required>
+                                    </div>
                                 </div>
 
                                 <div class="mb-3">
                                     <label for="password" class="form-label">Пароль *</label>
                                     <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="bi bi-key"></i>
+                                        </span>
                                         <input type="password" class="form-control" id="password" name="password" 
                                                placeholder="••••••••" required>
                                         <button type="button" class="btn btn-outline-secondary" 
@@ -70,32 +68,34 @@
                                     </div>
                                 </div>
 
-                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div class="mb-4">
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" id="remember" name="remember">
                                         <label class="form-check-label small" for="remember">
                                             Запам'ятати мене
                                         </label>
                                     </div>
-                                    <a href="#" class="small text-primary text-decoration-none">
-                                        Забули пароль?
-                                    </a>
                                 </div>
 
-                                <button type="submit" class="btn btn-primary w-100 py-2 mb-3">
-                                    Увійти
+                                <button type="submit" class="btn btn-danger w-100 py-2 mb-3">
+                                    <i class="bi bi-shield-lock me-2"></i> Увійти як адміністратор
                                 </button>
 
-                                <button type="button" class="btn btn-outline-secondary w-100 py-2 mb-3" 
-                                        onclick="window.location.href='/admin/login'">
-                                    Увійти як адміністратор
-                                </button>
-
-                                <p class="text-center text-muted small mb-0">
-                                    Ще не маєте облікового запису?
-                                    <a href="/register" class="text-primary text-decoration-none fw-medium">Зареєструватися</a>
-                                </p>
+                                <div class="text-center">
+                                    <a href="/login" class="btn btn-link text-muted text-decoration-none">
+                                        <i class="bi bi-arrow-left me-2"></i> Повернутися до звичайного входу
+                                    </a>
+                                </div>
                             </form>
+
+                            <!-- Security Notice -->
+                            <div class="alert alert-warning mt-4 d-flex align-items-start" role="alert">
+                                <i class="bi bi-exclamation-triangle me-2 mt-1"></i>
+                                <small>
+                                    <strong>Увага!</strong> Цей вхід призначений тільки для адміністраторів системи. 
+                                    Всі дії логуються.
+                                </small>
+                            </div>
                         </div>
                     </div>
                 </div>
