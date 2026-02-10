@@ -8,6 +8,8 @@ import ua.com.kisit.course2026np.entity.*;
 import ua.com.kisit.course2026np.repository.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 
 @Controller
@@ -22,27 +24,46 @@ public class ClientController {
 
     @GetMapping({"", "/"})
     public String dashboard(Model model) {
+        // Отримуємо поточного юзера (першого CLIENT у БД)
         User user = getDemoUser();
 
-        List<Account> accounts = accountRepository.findAll();
-        BigDecimal totalBalance = accounts.stream()
+        // Отримуємо ТІЛЬКИ картки цього юзера
+        List<CreditCard> userCards = creditCardRepository.findByUser(user);
+
+        // Рахуємо активні картки цього юзера
+        long activeCards = userCards.stream()
+                .filter(c -> Boolean.TRUE.equals(c.getIsActive()))
+                .count();
+
+        // Отримуємо всі рахунки, прив'язані до карток цього юзера
+        List<Account> userAccounts = userCards.stream()
+                .flatMap(card -> accountRepository.findByCreditCardId(card.getId()).stream())
+                .toList();
+
+        // Загальний баланс тільки цього юзера
+        BigDecimal totalBalance = userAccounts.stream()
                 .map(Account::getBalance)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        long activeCards = creditCardRepository.count();
+        // Платежі тільки для рахунків цього юзера
+        List<Payment> allUserPayments = userAccounts.stream()
+                .flatMap(account -> paymentRepository.findByAccount(account).stream())
+                .toList();
 
-        List<Payment> allPayments = paymentRepository.findAll();
-        long pendingCount = allPayments.stream()
+        // Кількість платежів зі статусом PENDING
+        long pendingCount = allUserPayments.stream()
                 .filter(p -> p.getStatus() == PaymentStatus.PENDING)
                 .count();
 
-        BigDecimal monthlySpending = allPayments.stream()
-                .filter(p -> p.getAmount().compareTo(BigDecimal.ZERO) < 0)
+        // Місячні витрати (тільки платежі типу PAYMENT)
+        BigDecimal monthlySpending = allUserPayments.stream()
+                .filter(p -> p.getType() == PaymentType.PAYMENT)
                 .map(Payment::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .abs();
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        List<Payment> recentTransactions = allPayments.stream()
+        // Останні 5 транзакцій (посортовані за датою, найновіші першими)
+        List<Payment> recentTransactions = allUserPayments.stream()
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
                 .limit(5)
                 .toList();
 
@@ -58,29 +79,88 @@ public class ClientController {
 
     @GetMapping("/accounts")
     public String accounts(Model model) {
-        List<Account> accounts = accountRepository.findAll();
+        User user = getDemoUser();
+        List<CreditCard> userCards = creditCardRepository.findByUser(user);
+        List<Account> accounts = userCards.stream()
+                .flatMap(card -> accountRepository.findByCreditCardId(card.getId()).stream())
+                .toList();
         model.addAttribute("accounts", accounts);
+        model.addAttribute("user", user);
         return "client/accounts";
     }
 
     @GetMapping("/cards")
     public String cards(Model model) {
-        List<CreditCard> cards = creditCardRepository.findAll();
+        User user = getDemoUser();
+        List<CreditCard> cards = creditCardRepository.findByUser(user);
         model.addAttribute("cards", cards);
+        model.addAttribute("user", user);
         return "client/cards";
+    }
+
+    /**
+     * Обробка форми додавання картки
+     */
+    @PostMapping("/cards/add")
+    public String addCard(@RequestParam String cardNumber,
+                          @RequestParam String cardholderName,
+                          @RequestParam String expiryDate,
+                          @RequestParam String cvv,
+                          Model model) {
+        try {
+            String cleanCardNumber = cardNumber.replace(" ", "");
+
+            String[] dateParts = expiryDate.split("/");
+            int month = Integer.parseInt(dateParts[0]);
+            int year = 2000 + Integer.parseInt(dateParts[1]);
+
+            LocalDate expiryLocalDate = LocalDate.of(year, month,
+                    YearMonth.of(year, month).lengthOfMonth());
+
+            User currentUser = getDemoUser();
+
+            CreditCard newCard = CreditCard.builder()
+                    .cardNumber(cleanCardNumber)
+                    .cardholderName(cardholderName.toUpperCase())
+                    .expiryDate(expiryLocalDate)
+                    .cvv(cvv)
+                    .user(currentUser)
+                    .isActive(true)
+                    .build();
+
+            creditCardRepository.save(newCard);
+
+            return "redirect:/dashboard/cards?success=true";
+
+        } catch (Exception e) {
+            return "redirect:/dashboard/cards?error=true";
+        }
     }
 
     @GetMapping("/payment")
     public String payment(Model model) {
-        List<Account> accounts = accountRepository.findAll();
+        User user = getDemoUser();
+        List<CreditCard> userCards = creditCardRepository.findByUser(user);
+        List<Account> accounts = userCards.stream()
+                .flatMap(card -> accountRepository.findByCreditCardId(card.getId()).stream())
+                .toList();
         model.addAttribute("accounts", accounts);
+        model.addAttribute("user", user);
         return "client/payment";
     }
 
     @GetMapping("/transactions")
     public String transactions(Model model) {
-        List<Payment> payments = paymentRepository.findAll();
+        User user = getDemoUser();
+        List<CreditCard> userCards = creditCardRepository.findByUser(user);
+        List<Account> userAccounts = userCards.stream()
+                .flatMap(card -> accountRepository.findByCreditCardId(card.getId()).stream())
+                .toList();
+        List<Payment> payments = userAccounts.stream()
+                .flatMap(account -> paymentRepository.findByAccountOrderByCreatedAtDesc(account).stream())
+                .toList();
         model.addAttribute("payments", payments);
+        model.addAttribute("user", user);
         return "client/transactions";
     }
 
@@ -91,21 +171,20 @@ public class ClientController {
         return "client/settings";
     }
 
+    // ---- Helpers ----
+
     private String formatCurrency(BigDecimal amount) {
         return String.format("$%,.2f", amount);
     }
 
+    /**
+     * Отримати першого CLIENT-юзера з БД.
+     * В майбутньому замінити на Spring Security: Principal / @AuthenticationPrincipal
+     */
     private User getDemoUser() {
         return userRepository.findAll().stream()
                 .filter(u -> u.getRole() == UserRole.CLIENT)
                 .findFirst()
-                .orElseGet(() -> {
-                    User demo = new User();
-                    demo.setFirstName("Іван");
-                    demo.setLastName("Петренко");
-                    demo.setEmail("user@example.com");
-                    demo.setRole(UserRole.CLIENT);
-                    return demo;
-                });
+                .orElseThrow(() -> new IllegalStateException("Жодного клієнта не знайдено в БД"));
     }
 }

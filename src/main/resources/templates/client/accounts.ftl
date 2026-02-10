@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мої рахунки - PayFlow</title>
+    <title>My Accounts - PayFlow</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
@@ -26,34 +26,34 @@
             <nav class="sidebar-nav p-3">
                 <a href="/dashboard" class="nav-link">
                     <i class="bi bi-grid-fill"></i>
-                    <span>Дашборд</span>
+                    <span>Dashboard</span>
                 </a>
                 <a href="/dashboard/accounts" class="nav-link active">
                     <i class="bi bi-wallet2"></i>
-                    <span>Мої рахунки</span>
+                    <span>My Accounts</span>
                 </a>
                 <a href="/dashboard/cards" class="nav-link">
                     <i class="bi bi-credit-card"></i>
-                    <span>Мої картки</span>
+                    <span>My Cards</span>
                 </a>
                 <a href="/dashboard/payment" class="nav-link">
                     <i class="bi bi-send"></i>
-                    <span>Здійснити платіж</span>
+                    <span>Make Payment</span>
                 </a>
                 <a href="/dashboard/transactions" class="nav-link">
                     <i class="bi bi-list-ul"></i>
-                    <span>Історія транзакцій</span>
+                    <span>Transactions</span>
                 </a>
                 <a href="/dashboard/settings" class="nav-link">
                     <i class="bi bi-gear"></i>
-                    <span>Налаштування</span>
+                    <span>Settings</span>
                 </a>
             </nav>
 
             <div class="p-3 border-top mt-auto">
                 <a href="/logout" class="nav-link text-muted">
                     <i class="bi bi-box-arrow-right"></i>
-                    <span>Вийти</span>
+                    <span>Logout</span>
                 </a>
             </div>
         </aside>
@@ -79,10 +79,10 @@
                             <span class="fw-medium d-none d-sm-inline">John Doe</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="/dashboard/settings"><i class="bi bi-person me-2"></i> Профіль</a></li>
-                            <li><a class="dropdown-item" href="/dashboard/settings"><i class="bi bi-gear me-2"></i> Налаштування</a></li>
+                            <li><a class="dropdown-item" href="/dashboard/settings"><i class="bi bi-person me-2"></i> Profile</a></li>
+                            <li><a class="dropdown-item" href="/dashboard/settings"><i class="bi bi-gear me-2"></i> Settings</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger" href="/logout"><i class="bi bi-box-arrow-right me-2"></i> Вийти</a></li>
+                            <li><a class="dropdown-item text-danger" href="/logout"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
                         </ul>
                     </div>
                 </div>
@@ -94,34 +94,51 @@
                     <!-- Header -->
                     <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
                         <div>
-                            <h1 class="h3 fw-bold mb-1">Мої рахунки</h1>
-                            <p class="text-muted mb-0">Керуйте своїми банківськими рахунками</p>
+                            <h1 class="h3 fw-bold mb-1">My Accounts</h1>
+                            <p class="text-muted mb-0">Manage your bank accounts</p>
                         </div>
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAccountModal">
-                            <i class="bi bi-plus-lg me-2"></i> Додати рахунок
+                            <i class="bi bi-plus-lg me-2"></i> Add Account
                         </button>
                     </div>
 
+                    <!-- Filter Buttons -->
+                    <div class="mb-4">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-primary active" data-filter="all">All</button>
+                            <button type="button" class="btn btn-outline-primary" data-filter="active">Active</button>
+                            <button type="button" class="btn btn-outline-primary" data-filter="blocked">Blocked</button>
+                        </div>
+                    </div>
+
                     <!-- Accounts Grid -->
-                    <div class="row g-4">
+                    <div class="row g-4" id="accountsGrid">
                         <#if accounts?has_content>
                             <#list accounts as account>
-                            <div class="col-md-6 col-lg-4">
+                            <div class="col-md-6 col-lg-4" data-status="${account.status}">
                                 <div class="account-card">
                                     <div class="d-flex justify-content-between align-items-start mb-3">
-                                        <span class="badge badge-secondary">Поточний</span>
-                                        <#if account.status == 'ACTIVE'>
-                                            <span class="badge badge-success">Активний</span>
+                                        <#-- Визначаємо тип рахунку -->
+                                        <#if account.accountNumber?contains("1234")>
+                                            <span class="fw-medium">Checking</span>
+                                        <#elseif account.accountNumber?contains("5432")>
+                                            <span class="fw-medium">Savings</span>
                                         <#else>
-                                            <span class="badge badge-danger">Заблокований</span>
+                                            <span class="fw-medium">Business</span>
+                                        </#if>
+                                        
+                                        <#if account.status == 'ACTIVE'>
+                                            <span class="badge" style="background-color: #d1fae5; color: #065f46; border-radius: 6px; padding: 4px 10px; font-weight: 500;">Active</span>
+                                        <#else>
+                                            <span class="badge" style="background-color: #fee2e2; color: #991b1b; border-radius: 6px; padding: 4px 10px; font-weight: 500;">Blocked</span>
                                         </#if>
                                     </div>
 
                                     <p class="account-number mb-2">****${account.accountNumber?substring(account.accountNumber?length - 4)}</p>
                                     <p class="account-balance mb-4">${account.balance?string.currency}</p>
 
-                                    <button class="btn btn-outline-primary w-100">
-                                        Деталі рахунку
+                                    <button class="btn btn-outline-primary w-100" onclick="window.location.href='/dashboard/accounts/${account.id}'">
+                                        View Details
                                     </button>
                                 </div>
                             </div>
@@ -131,10 +148,10 @@
                                 <div class="card border-0 bg-light text-center py-5">
                                     <div class="card-body">
                                         <i class="bi bi-wallet2 text-muted" style="font-size: 4rem;"></i>
-                                        <h5 class="mt-3 mb-2">Рахунків не знайдено</h5>
-                                        <p class="text-muted mb-3">Додайте свій перший рахунок</p>
+                                        <h5 class="mt-3 mb-2">No accounts found</h5>
+                                        <p class="text-muted mb-3">Add your first account to get started</p>
                                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAccountModal">
-                                            <i class="bi bi-plus-lg me-2"></i> Додати рахунок
+                                            <i class="bi bi-plus-lg me-2"></i> Add Account
                                         </button>
                                     </div>
                                 </div>
@@ -151,29 +168,29 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title fw-semibold">Додати новий рахунок</h5>
+                    <h5 class="modal-title fw-semibold">Add New Account</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form action="/dashboard/accounts/add" method="POST">
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="accountType" class="form-label">Тип рахунку</label>
+                            <label for="accountType" class="form-label">Account Type</label>
                             <select class="form-select" id="accountType" name="accountType" required>
-                                <option value="">Оберіть тип...</option>
-                                <option value="Checking">Поточний</option>
-                                <option value="Savings">Ощадний</option>
-                                <option value="Business">Бізнес</option>
+                                <option value="">Select type...</option>
+                                <option value="Checking">Checking</option>
+                                <option value="Savings">Savings</option>
+                                <option value="Business">Business</option>
                             </select>
                         </div>
 
                         <div class="alert alert-info d-flex align-items-start">
                             <i class="bi bi-info-circle me-2 mt-1"></i>
-                            <small>Номер рахунку буде згенеровано автоматично</small>
+                            <small>Account number will be generated automatically</small>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Скасувати</button>
-                        <button type="submit" class="btn btn-primary">Створити рахунок</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Account</button>
                     </div>
                 </form>
             </div>
@@ -183,6 +200,33 @@
     <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999" id="toast-container"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/static/js/main.js"></script>
+    <script src="/js/main.js"></script>
+    <script>
+        // Account filtering
+        document.querySelectorAll('[data-filter]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const filter = this.dataset.filter;
+                
+                // Update active button
+                document.querySelectorAll('[data-filter]').forEach(b => {
+                    b.classList.remove('active', 'btn-primary');
+                    b.classList.add('btn-outline-primary');
+                });
+                this.classList.remove('btn-outline-primary');
+                this.classList.add('active', 'btn-primary');
+                
+                // Filter accounts
+                document.querySelectorAll('#accountsGrid > div[data-status]').forEach(card => {
+                    if (filter === 'all') {
+                        card.style.display = '';
+                    } else if (filter === 'active') {
+                        card.style.display = card.dataset.status === 'ACTIVE' ? '' : 'none';
+                    } else if (filter === 'blocked') {
+                        card.style.display = card.dataset.status === 'BLOCKED' ? '' : 'none';
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>
