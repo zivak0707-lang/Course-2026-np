@@ -19,7 +19,6 @@
         .font-credit { font-family: 'Share Tech Mono', monospace; }
         .font-mono-details { font-family: 'JetBrains Mono', monospace; }
 
-        /* Анімація появи сторінки (Smooth Fade In) */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -28,7 +27,6 @@
             animation: fadeIn 0.4s ease-out forwards;
         }
 
-        /* 3D Flip */
         .perspective-1000 { perspective: 1200px; }
         .card-container {
             position: relative;
@@ -49,9 +47,13 @@
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .card-back { transform: rotateY(180deg); }
 
-        /* Чистий Золотий Чіп */
+        /* Додано z-index для доступності кнопок на звороті */
+        .card-back {
+            transform: rotateY(180deg);
+            z-index: 20;
+        }
+
         .chip-metallic {
             background: linear-gradient(135deg, #fce3b4 0%, #eec476 50%, #d4af37 100%);
             box-shadow: inset 0 1px 2px rgba(255,255,255,0.4), 0 1px 2px rgba(0,0,0,0.1);
@@ -60,7 +62,6 @@
 
         .text-shadow-sm { text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
 
-        /* Модалка */
         .modal {
             opacity: 0;
             visibility: hidden;
@@ -153,7 +154,7 @@
                     </#if>
 
                     <div class="group perspective-1000 h-[220px]" onmouseleave="unflipCard(this)">
-                        <div class="card-container w-full h-full relative cursor-pointer" onclick="toggleFlip(this)">
+                        <div class="card-container w-full h-full relative cursor-pointer" onclick="toggleFlip(event, this)">
 
                             <div class="card-face card-front ${bgClass} p-6 flex flex-col justify-between text-white">
                                 <div class="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none"></div>
@@ -207,11 +208,11 @@
                                     </div>
                                 </div>
 
-                                <div class="absolute right-5 top-[85px] z-20 flex gap-2" onclick="event.stopPropagation()">
-                                    <button onclick="toggleCardNumber('${card.id}')" class="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors" title="Show/Hide">
+                                <div class="absolute right-5 top-[85px] z-20 flex gap-2">
+                                    <button onclick="event.stopPropagation(); toggleCardNumber('${card.id}')" class="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors" title="Show/Hide">
                                         <i data-lucide="eye" class="h-4 w-4"></i>
                                     </button>
-                                    <button onclick="copyCardNumber('${card.cardNumber}', this)" class="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors" title="Copy">
+                                    <button onclick="event.stopPropagation(); copyCardNumber('${card.cardNumber}', this)" class="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors" title="Copy">
                                         <i data-lucide="copy" class="h-4 w-4"></i>
                                     </button>
                                 </div>
@@ -232,8 +233,9 @@
                                     <div class="mt-auto mb-6 flex justify-between items-center border-t border-white/10 pt-4">
                                         <p class="text-[10px] text-white/50">support@payflow.com</p>
 
-                                        <button onclick="event.stopPropagation(); openDeleteModal('${card.id}', '${card.cardNumber?substring(card.cardNumber?length - 4)}')"
-                                                class="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium text-red-100 hover:bg-red-500/20 hover:text-white transition-colors border border-red-500/30">
+                                        <button type="button"
+                                                onclick="event.stopPropagation(); openDeleteModal('${card.id}', '${card.cardNumber?substring(card.cardNumber?length - 4)}')"
+                                                class="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium text-red-100 hover:bg-red-500 hover:text-white transition-colors border border-red-500/30">
                                             <i data-lucide="trash-2" class="h-3 w-3"></i> Delete
                                         </button>
                                     </div>
@@ -265,15 +267,15 @@
         </div>
 
         <form action="/dashboard/cards/add" method="POST" class="space-y-4">
+            <#if _csrf??><input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/></#if>
             <div>
                 <label class="block text-xs font-medium text-gray-700 uppercase mb-1">Card Number</label>
                 <div class="relative">
                     <input type="text" name="cardNumber" id="cardNumberInput" maxlength="19" placeholder="0000 0000 0000 0000" required
-                           class="block w-full rounded-lg border-gray-300 bg-gray-50 border px-3 py-2.5 text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                           class="block w-full rounded-lg border-gray-300 bg-gray-50 border px-3 py-2.5 text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none">
                     <i data-lucide="credit-card" class="absolute right-3 top-2.5 h-5 w-5 text-gray-400"></i>
                 </div>
             </div>
-
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-medium text-gray-700 uppercase mb-1">Expiry</label>
@@ -286,13 +288,11 @@
                            class="block w-full rounded-lg border-gray-300 bg-gray-50 border px-3 py-2.5 text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
             </div>
-
             <div>
                 <label class="block text-xs font-medium text-gray-700 uppercase mb-1">Cardholder Name</label>
                 <input type="text" name="cardholderName" placeholder="JOHN DOE" required
                        class="block w-full rounded-lg border-gray-300 bg-gray-50 border px-3 py-2.5 text-sm font-medium uppercase focus:ring-2 focus:ring-blue-500 outline-none">
             </div>
-
             <button type="submit" class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20 mt-2">
                 Save Card
             </button>
@@ -311,6 +311,7 @@
             Are you sure you want to delete card ending in <span id="deleteCardLast4" class="font-mono font-bold text-gray-800"></span>?
         </p>
         <form id="deleteCardForm" method="POST" class="flex gap-3">
+            <#if _csrf??><input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/></#if>
             <button type="button" onclick="closeDeleteModal()" class="flex-1 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50">Cancel</button>
             <button type="submit" class="flex-1 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700">Delete</button>
         </form>
@@ -320,8 +321,10 @@
 <script>
     if (window.lucide) window.lucide.createIcons();
 
-    function toggleFlip(element) {
+    function toggleFlip(event, element) {
+        // Перевірка, чи не був клік по кнопці (ігноруємо переворот)
         if (event.target.closest('button')) return;
+
         element.closest('.card-container').classList.toggle('flipped');
     }
 
@@ -332,24 +335,16 @@
     function toggleCardNumber(cardId) {
         const textElement = document.getElementById('cardNumberText-' + cardId);
         if (!textElement) return;
-
         const isMasked = textElement.getAttribute('data-masked') === 'true';
         const fullNumber = textElement.getAttribute('data-full');
 
         if (isMasked) {
-            const formatted = fullNumber.match(/.{1,4}/g)?.join(' ') || fullNumber;
-            textElement.textContent = formatted;
+            textElement.textContent = fullNumber.match(/.{1,4}/g)?.join(' ') || fullNumber;
             textElement.setAttribute('data-masked', 'false');
-            textElement.style.letterSpacing = '0.08em';
-
-            setTimeout(() => {
-                if (textElement.getAttribute('data-masked') === 'false') toggleCardNumber(cardId);
-            }, 5000);
+            setTimeout(() => { if (textElement.getAttribute('data-masked') === 'false') toggleCardNumber(cardId); }, 5000);
         } else {
-            const last4 = fullNumber.substring(fullNumber.length - 4);
-            textElement.textContent = '**** **** **** ' + last4;
+            textElement.textContent = '**** **** **** ' + fullNumber.substring(fullNumber.length - 4);
             textElement.setAttribute('data-masked', 'true');
-            textElement.style.letterSpacing = '';
         }
     }
 
@@ -358,10 +353,7 @@
             const original = btn.innerHTML;
             btn.innerHTML = '<i data-lucide="check" class="h-4 w-4 text-green-400"></i>';
             if (window.lucide) window.lucide.createIcons();
-            setTimeout(() => {
-                btn.innerHTML = original;
-                if (window.lucide) window.lucide.createIcons();
-            }, 1500);
+            setTimeout(() => { btn.innerHTML = original; if (window.lucide) window.lucide.createIcons(); }, 1500);
         });
     }
 
@@ -369,12 +361,14 @@
     function closeModal() { document.getElementById('addCardModal').classList.remove('open'); }
 
     function openDeleteModal(id, last4) {
-        document.getElementById('deleteCardForm').action = '/dashboard/cards/delete/' + id;
+        const form = document.getElementById('deleteCardForm');
+        form.action = '/dashboard/cards/delete/' + id;
         document.getElementById('deleteCardLast4').textContent = last4;
         document.getElementById('deleteCardModal').classList.add('open');
     }
     function closeDeleteModal() { document.getElementById('deleteCardModal').classList.remove('open'); }
 
+    // Input Formatters
     document.getElementById('cardNumberInput')?.addEventListener('input', e => {
         let v = e.target.value.replace(/\D/g, '').substring(0,16);
         e.target.value = v.match(/.{1,4}/g)?.join(' ') || v;
