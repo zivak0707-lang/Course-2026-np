@@ -76,7 +76,7 @@ public class ClientController {
         return "client/accounts";
     }
 
-    // --- 3. CARDS ---
+    // --- 3. CARDS (Оновлено для підтримки списку) ---
     @GetMapping("/cards")
     public String cards(Model model) {
         User user = getDemoUser();
@@ -86,6 +86,7 @@ public class ClientController {
         return "client/cards";
     }
 
+    // --- 3.1 ADD CARD (Правки для коректної дати та безпеки) ---
     @PostMapping("/cards/add")
     public String addCard(@RequestParam String cardNumber,
                           @RequestParam String cardholderName,
@@ -93,16 +94,46 @@ public class ClientController {
                           @RequestParam String cvv,
                           RedirectAttributes redirectAttributes) {
         try {
-            String cleanCardNumber = cardNumber.replace(" ", "");
+            // Очищення номера від пробілів
+            String cleanCardNumber = cardNumber.replace(" ", "").trim();
+
+            // ✅ Валідація номера картки (має бути 16 цифр)
+            if (!cleanCardNumber.matches("^\\d{16}$")) {
+                throw new IllegalArgumentException("Номер картки має містити 16 цифр");
+            }
+
+            // ✅ Валідація CVV (має бути 3 цифри)
+            if (!cvv.matches("^\\d{3}$")) {
+                throw new IllegalArgumentException("CVV має містити 3 цифри");
+            }
+
+            // Перевірка формату дати MM/YY
+            if (!expiryDate.matches("^(0[1-9]|1[0-2])/[0-9]{2}$")) {
+                throw new IllegalArgumentException("Невірний формат дати. Використовуйте MM/YY");
+            }
+
             String[] dateParts = expiryDate.split("/");
             int month = Integer.parseInt(dateParts[0]);
-            int year = 2000 + Integer.parseInt(dateParts[1]);
-            LocalDate expiryLocalDate = LocalDate.of(year, month, YearMonth.of(year, month).lengthOfMonth());
+            int yearShort = Integer.parseInt(dateParts[1]);
+            int yearFull = 2000 + yearShort;
+
+            // Встановлюємо дату на останній день місяця
+            LocalDate expiryLocalDate = LocalDate.of(yearFull, month, YearMonth.of(yearFull, month).lengthOfMonth());
+
+            if (expiryLocalDate.isBefore(LocalDate.now())) {
+                throw new IllegalArgumentException("Термін дії картки вже закінчився!");
+            }
 
             User currentUser = getDemoUser();
+
+            // ✅ Перевірка на дублікат номера картки
+            if (creditCardRepository.existsByCardNumber(cleanCardNumber)) {
+                throw new IllegalArgumentException("Картка з таким номером вже існує");
+            }
+
             CreditCard newCard = CreditCard.builder()
                     .cardNumber(cleanCardNumber)
-                    .cardholderName(cardholderName.toUpperCase())
+                    .cardholderName(cardholderName.toUpperCase().trim())
                     .expiryDate(expiryLocalDate)
                     .cvv(cvv)
                     .user(currentUser)
@@ -110,10 +141,35 @@ public class ClientController {
                     .build();
 
             creditCardRepository.save(newCard);
-            redirectAttributes.addFlashAttribute("successMessage", "Card added successfully!");
+            redirectAttributes.addFlashAttribute("successMessage", "Картку успішно додано!");
+
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         } catch (Exception e) {
-            log.error("Error adding card for user: {}", cardholderName, e);
-            redirectAttributes.addFlashAttribute("errorMessage", "Error adding card.");
+            log.error("Помилка при додаванні картки для: {}", cardholderName, e);
+            redirectAttributes.addFlashAttribute("errorMessage", "Сталася технічна помилка при додаванні картки.");
+        }
+        return "redirect:/dashboard/cards";
+    }
+
+    // --- 3.2 DELETE CARD (Нова функція, була в Lovable) ---
+    @PostMapping("/cards/delete/{id}")
+    public String deleteCard(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            User user = getDemoUser();
+            CreditCard card = creditCardRepository.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Картку не знайдено"));
+
+            // Перевірка, що картка належить поточному користувачу
+            if (!card.getUser().getId().equals(user.getId())) {
+                throw new IllegalStateException("Доступ заборонено");
+            }
+
+            creditCardRepository.delete(card);
+            redirectAttributes.addFlashAttribute("successMessage", "Картку успішно видалено.");
+        } catch (Exception e) {
+            log.error("Error deleting card ID: {}", id, e);
+            redirectAttributes.addFlashAttribute("errorMessage", "Не вдалося видалити картку.");
         }
         return "redirect:/dashboard/cards";
     }
@@ -155,41 +211,32 @@ public class ClientController {
                                 @RequestParam String email,
                                 RedirectAttributes redirectAttributes) {
         try {
-            // 1. Перевірка на пусті поля
             if (firstName.trim().isEmpty() || lastName.trim().isEmpty() || email.trim().isEmpty()) {
                 redirectAttributes.addFlashAttribute("errorMessage", "Всі поля повинні бути заповнені!");
                 return "redirect:/dashboard/settings";
             }
 
-            // 2. Валідація Імені та Прізвища
-            // Дозволяємо: літери (всіх мов), пробіл, крапку, апостроф, дефіс.
-            // Забороняємо: цифри та спецсимволи.
             String nameRegex = "^[\\p{L} .'-]+$";
-
             if (!firstName.matches(nameRegex) || !lastName.matches(nameRegex)) {
                 redirectAttributes.addFlashAttribute("errorMessage", "Ім'я та прізвище повинні містити лише літери!");
                 return "redirect:/dashboard/settings";
             }
 
-            // 3. Валідація Email
             String emailRegex = "^[\\w-.]+@([\\w-]+\\.)+[\\w-]{2,}$";
-
             if (!email.matches(emailRegex)) {
-                redirectAttributes.addFlashAttribute("errorMessage", "Невірний формат Email (наприклад: user@example.com)");
+                redirectAttributes.addFlashAttribute("errorMessage", "Невірний формат Email");
                 return "redirect:/dashboard/settings";
             }
 
             User user = getDemoUser();
-
             user.setFirstName(firstName.trim());
             user.setLastName(lastName.trim());
             user.setEmail(email.trim());
-
             userRepository.save(user);
 
             redirectAttributes.addFlashAttribute("successMessage", "Профіль успішно оновлено!");
         } catch (Exception e) {
-            log.error("Помилка при оновленні профілю користувача [Email: {}]", email, e);
+            log.error("Помилка при оновленні профілю", e);
             redirectAttributes.addFlashAttribute("errorMessage", "Помилка при оновленні профілю.");
         }
         return "redirect:/dashboard/settings";
@@ -218,7 +265,6 @@ public class ClientController {
     }
 
     // --- HELPERS ---
-
     private List<Account> getUserAccounts(List<CreditCard> cards) {
         return cards.stream()
                 .flatMap(card -> accountRepository.findByCreditCardId(card.getId()).stream())

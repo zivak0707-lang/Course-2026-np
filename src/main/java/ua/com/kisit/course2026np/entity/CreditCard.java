@@ -9,6 +9,7 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -89,6 +90,18 @@ public class CreditCard {
             return "";
         }
         return "**** **** **** " + cardNumber.substring(cardNumber.length() - 4);
+    }
+
+    /**
+     * ✅ НОВИЙ МЕТОД: Форматована дата для FreeMarker шаблонів
+     * Повертає дату в форматі MM/yy
+     */
+    public String getFormattedExpiryDate() {
+        if (expiryDate == null) {
+            return "--/--";
+        }
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/yy");
+        return expiryDate.format(formatter);
     }
 
     /* ===================== TEST HELPERS (FIX) ===================== */

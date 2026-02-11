@@ -1,318 +1,355 @@
+<#-- @ftlvariable name="cards" type="java.util.List<ua.com.kisit.course2026np.entity.CreditCard>" -->
+<#-- @ftlvariable name="user" type="ua.com.kisit.course2026np.entity.User" -->
+
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Cards - PayFlow</title>
-    
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="/css/style.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
     <style>
-        .credit-card-3d {
-            perspective: 1000px;
-            cursor: pointer;
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* 3D Flip Styles */
+        .perspective-1000 {
+            perspective: 1200px;
         }
-        .credit-card-inner {
+
+        .card-inner {
             position: relative;
             width: 100%;
-            height: 200px;
-            transition: transform 0.6s;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             transform-style: preserve-3d;
         }
-        .credit-card-3d:hover .credit-card-inner {
+
+        .card-container.flipped .card-inner {
             transform: rotateY(180deg);
         }
-        .credit-card-front, .credit-card-back {
+
+        .card-front, .card-back {
             position: absolute;
             width: 100%;
             height: 100%;
+            -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
             border-radius: 1rem;
-            padding: 1.5rem;
-            color: white;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-        .credit-card-back {
-            transform: rotateY(180deg);
-        }
-        .card-chip {
-            width: 50px;
-            height: 35px;
-            background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%);
-            border-radius: 6px;
-            position: relative;
             overflow: hidden;
         }
-        .card-chip::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 70%;
-            height: 70%;
-            background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%);
-            border-radius: 3px;
+
+        .card-back {
+            transform: rotateY(180deg);
         }
-        .magnetic-strip {
-            width: calc(100% + 3rem);
-            height: 45px;
-            background: rgba(0,0,0,0.4);
-            margin: -1.5rem -1.5rem 1rem -1.5rem;
+
+        /* Modal Animation */
+        .modal {
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease-in-out;
+        }
+        .modal.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            transform: scale(0.95) translateY(10px);
+            transition: all 0.3s ease-in-out;
+        }
+        .modal.open .modal-content {
+            transform: scale(1) translateY(0);
         }
     </style>
 </head>
-<body>
-    <div class="d-flex">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="p-3 border-bottom">
-                <a href="/" class="text-decoration-none">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-wallet2 fs-4 text-primary"></i>
-                        <span class="fs-5 fw-bold text-primary">PayFlow</span>
-                    </div>
-                </a>
+<body class="bg-gray-50 text-gray-900">
+
+<div class="flex min-h-screen w-full">
+
+    <aside class="sidebar hidden lg:flex flex-col border-r border-gray-200 bg-white px-6 py-6">
+        <div class="mb-8 flex items-center gap-2 px-2">
+            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white">
+                <i data-lucide="wallet" class="h-5 w-5"></i>
             </div>
+            <span class="text-xl font-bold tracking-tight text-blue-900">PayFlow</span>
+        </div>
+        <nav class="flex flex-1 flex-col space-y-1">
+            <a href="/dashboard" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                <i data-lucide="layout-dashboard" class="h-4 w-4"></i> Dashboard
+            </a>
+            <a href="/dashboard/accounts" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                <i data-lucide="credit-card" class="h-4 w-4"></i> My Accounts
+            </a>
+            <a href="/dashboard/cards" class="group flex items-center gap-3 rounded-md bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700">
+                <i data-lucide="credit-card" class="h-4 w-4"></i> My Cards
+            </a>
+            <a href="/dashboard/payment" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                <i data-lucide="send" class="h-4 w-4"></i> Make Payment
+            </a>
+            <a href="/dashboard/transactions" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                <i data-lucide="list" class="h-4 w-4"></i> Transactions
+            </a>
+            <a href="/dashboard/settings" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                <i data-lucide="settings" class="h-4 w-4"></i> Settings
+            </a>
+        </nav>
+        <div class="mt-auto border-t border-gray-200 pt-4">
+            <a href="/dashboard/logout" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600">
+                <i data-lucide="log-out" class="h-4 w-4"></i> Logout
+            </a>
+        </div>
+    </aside>
 
-            <nav class="sidebar-nav p-3">
-                <a href="/dashboard" class="nav-link">
-                    <i class="bi bi-grid-fill"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="/dashboard/accounts" class="nav-link">
-                    <i class="bi bi-wallet2"></i>
-                    <span>My Accounts</span>
-                </a>
-                <a href="/dashboard/cards" class="nav-link active">
-                    <i class="bi bi-credit-card"></i>
-                    <span>My Cards</span>
-                </a>
-                <a href="/dashboard/payment" class="nav-link">
-                    <i class="bi bi-send"></i>
-                    <span>Make Payment</span>
-                </a>
-                <a href="/dashboard/transactions" class="nav-link">
-                    <i class="bi bi-list-ul"></i>
-                    <span>Transactions</span>
-                </a>
-                <a href="/dashboard/settings" class="nav-link">
-                    <i class="bi bi-gear"></i>
-                    <span>Settings</span>
-                </a>
-            </nav>
+    <main class="main-content flex-1 overflow-auto p-8">
 
-            <div class="p-3 border-top mt-auto">
-                <a href="/logout" class="nav-link text-muted">
-                    <i class="bi bi-box-arrow-right"></i>
-                    <span>Logout</span>
-                </a>
+        <#if successMessage??>
+            <div id="alert-box" class="mb-6 rounded-md bg-green-50 p-4 border border-green-200 flex items-center gap-3">
+                <i data-lucide="check-circle" class="h-5 w-5 text-green-500"></i>
+                <p class="text-sm font-medium text-green-800">${successMessage}</p>
             </div>
-        </aside>
+        </#if>
+        <#if errorMessage??>
+            <div id="alert-box" class="mb-6 rounded-md bg-red-50 p-4 border border-red-200 flex items-center gap-3">
+                <i data-lucide="alert-circle" class="h-5 w-5 text-red-500"></i>
+                <p class="text-sm font-medium text-red-800">${errorMessage}</p>
+            </div>
+        </#if>
 
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Top Bar -->
-            <header class="bg-white border-bottom sticky-top">
-                <div class="d-flex align-items-center justify-content-between p-3 p-lg-4">
-                    <button class="btn btn-link d-lg-none p-0 text-dark" onclick="toggleSidebar()">
-                        <i class="bi bi-list fs-3"></i>
-                    </button>
-                    
-                    <div class="flex-grow-1"></div>
-
-                    <div class="dropdown">
-                        <button class="btn btn-link text-dark text-decoration-none dropdown-toggle d-flex align-items-center gap-2" 
-                                type="button" data-bs-toggle="dropdown">
-                            <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" 
-                                 style="width: 40px; height: 40px;">
-                                <span class="fw-semibold text-primary">JD</span>
-                            </div>
-                            <span class="fw-medium d-none d-sm-inline">John Doe</span>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="/dashboard/settings"><i class="bi bi-person me-2"></i> Profile</a></li>
-                            <li><a class="dropdown-item" href="/dashboard/settings"><i class="bi bi-gear me-2"></i> Settings</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger" href="/logout"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
-                        </ul>
-                    </div>
+        <div class="space-y-6 animate-fade-in mx-auto max-w-5xl">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">My Cards</h1>
+                    <p class="text-gray-500">Manage your physical and virtual cards</p>
                 </div>
-            </header>
+                <button onclick="openModal()" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all">
+                    <i data-lucide="plus" class="h-4 w-4 mr-2"></i> Add Card
+                </button>
+            </div>
 
-            <!-- Content -->
-            <main class="p-3 p-lg-4">
-                <div class="animate-fade-in">
-                    <!-- Header -->
-                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mb-4">
-                        <div>
-                            <h1 class="h3 fw-bold mb-1">My Cards</h1>
-                            <p class="text-muted mb-0">Manage your payment cards</p>
-                        </div>
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCardModal">
-                            <i class="bi bi-plus-lg me-2"></i> Add Card
-                        </button>
-                    </div>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                <#list cards as card>
+                    <#assign themeIndex = card?index % 3>
+                    <#assign gradientClass = "">
 
-                    <!-- Cards Grid -->
-                    <div class="row g-4">
-                        <#if cards?? && cards?size gt 0>
-                            <#list cards as card>
-                            <#-- Визначаємо тип картки за номером --/>
-                            <#assign cardType = "VISA">
-                            <#assign cardGradient = "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)">
-                            <#if card.cardNumber?ends_with("7890")>
-                                <#assign cardType = "MASTERCARD">
-                                <#assign cardGradient = "linear-gradient(135deg, #f97316 0%, #ea580c 100%)">
-                            <#elseif card.cardNumber?ends_with("1098")>
-                                <#assign cardType = "VISA">
-                                <#assign cardGradient = "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)">
-                            </#if>
-                            
-                            <div class="col-md-6 col-lg-4">
-                                <div class="credit-card-3d">
-                                    <div class="credit-card-inner">
-                                        <!-- Front -->
-                                        <div class="credit-card-front" style="background: ${cardGradient};">
-                                            <div class="d-flex justify-content-between align-items-start mb-4">
-                                                <span class="text-white fw-semibold small text-uppercase">${cardType}</span>
-                                                <div class="card-chip"></div>
-                                            </div>
-                                            <div class="mb-4 mt-auto">
-                                                <div class="fs-5 font-monospace" style="letter-spacing: 0.15em;">
-                                                    •••• •••• •••• ${card.cardNumber?substring(card.cardNumber?length - 4)}
-                                                </div>
-                                            </div>
-                                            <div class="d-flex justify-content-between align-items-end">
-                                                <div>
-                                                    <div class="text-white-50 mb-1" style="font-size: 0.65rem; text-transform: uppercase;">Cardholder</div>
-                                                    <div class="small fw-semibold text-uppercase">${card.cardholderName}</div>
-                                                </div>
-                                                <div class="text-end">
-                                                    <div class="text-white-50 mb-1" style="font-size: 0.65rem; text-transform: uppercase;">Expires</div>
-                                                    <div class="small fw-semibold">${card.expiryDate?string('MM/yy')}</div>
-                                                </div>
+                    <#if themeIndex == 0>
+                        <#assign gradientClass = "bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460]">
+                    <#elseif themeIndex == 1>
+                        <#assign gradientClass = "bg-gradient-to-br from-[#0d0d0d] via-[#1a1a2e] to-[#2d2d44]">
+                    <#else>
+                        <#assign gradientClass = "bg-gradient-to-br from-[#134e5e] via-[#1a6b7a] to-[#71b280]">
+                    </#if>
+
+                    <div class="group perspective-1000 h-[240px]" onmouseleave="unflipCard(this)">
+                        <div class="card-container w-full h-full cursor-pointer relative" onclick="toggleFlip(this)">
+                            <div class="card-inner w-full h-full shadow-2xl rounded-2xl transition-all duration-300 group-hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)]">
+
+                                <div class="card-front ${gradientClass} p-6 flex flex-col justify-between text-white">
+                                    <div class="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent pointer-events-none"></div>
+                                    <div class="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                                    <div class="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
+
+                                    <div class="relative flex justify-between items-start z-10">
+                                        <span class="text-white/90 text-sm font-bold tracking-[0.2em] uppercase">
+                                            PAYFLOW
+                                        </span>
+                                        <i data-lucide="wifi" class="h-5 w-5 text-white/60 rotate-90"></i>
+                                    </div>
+
+                                    <div class="relative flex items-center gap-4 z-10">
+                                        <div class="w-12 h-9 rounded-md bg-gradient-to-br from-yellow-300/90 via-yellow-400/80 to-yellow-600/70 shadow-inner flex items-center justify-center">
+                                            <div class="w-8 h-6 rounded-sm border border-yellow-700/30 grid grid-cols-3 grid-rows-2 gap-px overflow-hidden">
+                                                <div class="bg-yellow-500/40"></div><div class="bg-yellow-500/40"></div><div class="bg-yellow-500/40"></div>
+                                                <div class="bg-yellow-500/40"></div><div class="bg-yellow-500/40"></div><div class="bg-yellow-500/40"></div>
                                             </div>
                                         </div>
-                                        <!-- Back -->
-                                        <div class="credit-card-back" style="background: ${cardGradient};">
-                                            <div class="magnetic-strip"></div>
-                                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                                <span class="small text-white-50">CVV</span>
-                                                <span class="bg-white text-dark px-3 py-1 rounded font-monospace fw-semibold">${card.cvv}</span>
+                                    </div>
+
+                                    <div class="relative z-10">
+                                        <p class="text-lg sm:text-xl font-mono tracking-[0.15em] drop-shadow-md">
+                                            **** **** **** ${card.cardNumber?substring(card.cardNumber?length - 4)}
+                                        </p>
+                                    </div>
+
+                                    <div class="relative flex justify-between items-end z-10">
+                                        <div>
+                                            <p class="text-white/40 text-[9px] uppercase tracking-widest mb-0.5">Card Holder</p>
+                                            <p class="text-sm font-semibold tracking-wide uppercase">${card.cardholderName}</p>
+                                        </div>
+                                        <span class="text-white/90 text-xs font-bold tracking-[0.15em] uppercase">
+                                            <#if card.cardNumber?starts_with("4")>VISA<#else>MASTERCARD</#if>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="card-back ${gradientClass} flex flex-col">
+                                    <div class="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent pointer-events-none"></div>
+
+                                    <div class="w-full h-12 bg-black/60 mt-6 relative z-10"></div>
+
+                                    <div class="px-6 mt-4 flex-1 flex flex-col justify-between pb-6 relative z-10">
+                                        <div class="flex items-start justify-between gap-4">
+                                            <div class="text-left">
+                                                <p class="text-white/40 text-[9px] uppercase tracking-widest mb-0.5">Valid Thru</p>
+                                                <p class="text-white text-sm font-semibold">
+                                                    <#-- ✅ ВИПРАВЛЕНО: використовуємо новий метод -->
+                                                    ${card.formattedExpiryDate}
+                                                </p>
                                             </div>
-                                            <div class="text-center mt-auto">
-                                                <small class="text-white-50">PayFlow Bank</small>
-                                                <div class="mt-2 small text-white-50">For customer service: 1-800-PAYFLOW</div>
+                                            <div class="text-right">
+                                                <div class="bg-white/10 rounded px-4 py-1.5 inline-block">
+                                                    <span class="text-white font-mono text-lg tracking-widest">${card.cvv}</span>
+                                                </div>
+                                                <p class="text-white/30 text-[9px] mt-1 uppercase tracking-wider">CVV</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center justify-between mt-auto">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="credit-card" class="h-4 w-4 text-white/30"></i>
+                                                <p class="text-white/30 text-[10px] tracking-wider">PayFlow Bank</p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="mt-3 text-center">
-                                    <button class="btn btn-sm btn-outline-danger" onclick="confirmDeleteCard('${card.id}')">
-                                        <i class="bi bi-trash"></i> Remove
-                                    </button>
-                                </div>
-                            </div>
-                            </#list>
-                        <#else>
-                            <div class="col-12">
-                                <div class="text-center py-5">
-                                    <i class="bi bi-credit-card fs-1 text-muted"></i>
-                                    <h5 class="mt-3 text-muted">You don't have any cards yet</h5>
-                                    <p class="text-muted">Add your first card to make payments</p>
-                                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCardModal">
-                                        <i class="bi bi-plus-lg me-2"></i> Add Card
-                                    </button>
-                                </div>
-                            </div>
-                        </#if>
-                    </div>
-                </div>
-            </main>
-        </div>
-    </div>
 
-    <!-- Add Card Modal -->
-    <div class="modal fade" id="addCardModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-semibold">Add New Card</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                        </div>
+                    </div>
+                </#list>
+
+                <div onclick="openModal()" class="group h-[240px] border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors">
+                    <div class="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                        <i data-lucide="plus" class="h-6 w-6 text-gray-400 group-hover:text-blue-600"></i>
+                    </div>
+                    <p class="mt-4 text-sm font-medium text-gray-500 group-hover:text-blue-600">Add New Card</p>
                 </div>
-                <form action="/dashboard/cards/add" method="POST" class="needs-validation" novalidate>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="cardNumber" class="form-label">Card Number *</label>
-                            <input type="text" class="form-control font-monospace" id="cardNumber" name="cardNumber" 
-                                   placeholder="1234 5678 9012 3456" maxlength="19" required>
-                            <div class="invalid-feedback">Please enter card number</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="cardholderName" class="form-label">Cardholder Name *</label>
-                            <input type="text" class="form-control text-uppercase" id="cardholderName" name="cardholderName" 
-                                   placeholder="JOHN DOE" required>
-                            <div class="invalid-feedback">Please enter cardholder name</div>
-                        </div>
-                        <div class="row">
-                            <div class="col-6">
-                                <div class="mb-3">
-                                    <label for="expiryDate" class="form-label">Expiry Date *</label>
-                                    <input type="text" class="form-control font-monospace" id="expiryDate" name="expiryDate" 
-                                           placeholder="MM/YY" maxlength="5" required>
-                                    <div class="invalid-feedback">MM/YY</div>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="mb-3">
-                                    <label for="cvv" class="form-label">CVV *</label>
-                                    <input type="text" class="form-control font-monospace" id="cvv" name="cvv" 
-                                           placeholder="123" maxlength="3" required>
-                                    <div class="invalid-feedback">3 digits</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Add Card</button>
-                    </div>
-                </form>
             </div>
         </div>
+    </main>
+</div>
+
+<div id="addCardModal" class="modal fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeModal()"></div>
+
+    <div class="modal-content relative w-full max-w-md bg-white rounded-xl shadow-2xl p-6 m-4 z-10">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-gray-900">Add New Card</h2>
+            <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition-colors" aria-label="Close modal">
+                <i data-lucide="x" class="h-5 w-5"></i>
+            </button>
+        </div>
+
+        <form action="/dashboard/cards/add" method="POST" class="space-y-4">
+            <div class="space-y-2">
+                <label for="cardNumberInput" class="text-sm font-medium text-gray-700">Card Number</label>
+                <input type="text" name="cardNumber" id="cardNumberInput" maxlength="19" placeholder="0000 0000 0000 0000" required
+                       class="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label for="expiryDateInput" class="text-sm font-medium text-gray-700">Expiry Date</label>
+                    <input type="text" name="expiryDate" id="expiryDateInput" maxlength="5" placeholder="MM/YY" required
+                           class="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div class="space-y-2">
+                    <label for="cvvInput" class="text-sm font-medium text-gray-700">CVV</label>
+                    <input type="text" name="cvv" id="cvvInput" maxlength="3" placeholder="123" required
+                           class="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <label for="cardholderNameInput" class="text-sm font-medium text-gray-700">Cardholder Name</label>
+                <input type="text" name="cardholderName" id="cardholderNameInput" placeholder="JOHN DOE" required
+                       class="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase">
+            </div>
+
+            <div class="pt-2 flex justify-end gap-3">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition-colors">
+                    Add Card
+                </button>
+            </div>
+        </form>
     </div>
+</div>
 
-    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999" id="toast-container"></div>
+<script>
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/main.js"></script>
-    <script>
-        // Auto-format card number
-        document.getElementById('cardNumber')?.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\s/g, '');
-            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
-            e.target.value = formattedValue;
-        });
+    function toggleFlip(element) {
+        const container = element.closest('.card-container');
+        container.classList.toggle('flipped');
+    }
 
-        // Auto-format expiry date
-        document.getElementById('expiryDate')?.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\//g, '');
-            if (value.length >= 2) {
-                e.target.value = value.slice(0, 2) + '/' + value.slice(2, 4);
-            } else {
-                e.target.value = value;
-            }
-        });
-        
-        // Confirm card deletion
-        function confirmDeleteCard(cardId) {
-            if (confirm('Are you sure you want to remove this card?')) {
-                window.location.href = '/dashboard/cards/delete/' + cardId;
-            }
+    function unflipCard(element) {
+        const container = element.querySelector('.card-container');
+        if (container) {
+            container.classList.remove('flipped');
         }
-    </script>
+    }
+
+    function openModal() {
+        const modal = document.getElementById('addCardModal');
+        modal.classList.add('open');
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('addCardModal');
+        modal.classList.remove('open');
+    }
+
+    // ✅ Форматування номера картки (0000 0000 0000 0000)
+    const cardInput = document.getElementById('cardNumberInput');
+    if (cardInput) {
+        cardInput.addEventListener('input', function (e) {
+            let value = e.target.value.replace(/\D/g, '');
+            value = value.substring(0, 16);
+            e.target.value = value.match(/.{1,4}/g)?.join(' ') || value;
+        });
+    }
+
+    // ✅ Форматування дати експірації (MM/YY)
+    const expiryInput = document.getElementById('expiryDateInput');
+    if (expiryInput) {
+        expiryInput.addEventListener('input', function (e) {
+            let value = e.target.value.replace(/\D/g, '');
+
+            if (value.length >= 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            }
+
+            e.target.value = value.substring(0, 5);
+        });
+    }
+
+    // ✅ Тільки цифри для CVV
+    const cvvInput = document.getElementById('cvvInput');
+    if (cvvInput) {
+        cvvInput.addEventListener('input', function (e) {
+            e.target.value = e.target.value.replace(/\D/g, '').substring(0, 3);
+        });
+    }
+
+    // Auto-hide alerts after 4 seconds
+    setTimeout(() => {
+        const alertBox = document.getElementById('alert-box');
+        if (alertBox) {
+            alertBox.style.transition = "opacity 0.5s";
+            alertBox.style.opacity = "0";
+            setTimeout(() => alertBox.remove(), 500);
+        }
+    }, 4000);
+</script>
 </body>
 </html>
