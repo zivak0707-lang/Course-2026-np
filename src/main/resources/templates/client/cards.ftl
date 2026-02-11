@@ -19,6 +19,15 @@
         .font-credit { font-family: 'Share Tech Mono', monospace; }
         .font-mono-details { font-family: 'JetBrains Mono', monospace; }
 
+        /* Анімація появи сторінки (Smooth Fade In) */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
         /* 3D Flip */
         .perspective-1000 { perspective: 1200px; }
         .card-container {
@@ -42,7 +51,7 @@
         }
         .card-back { transform: rotateY(180deg); }
 
-        /* Чистий Золотий Чіп (БЕЗ чорних ліній) */
+        /* Чистий Золотий Чіп */
         .chip-metallic {
             background: linear-gradient(135deg, #fce3b4 0%, #eec476 50%, #d4af37 100%);
             box-shadow: inset 0 1px 2px rgba(255,255,255,0.4), 0 1px 2px rgba(0,0,0,0.1);
@@ -51,6 +60,7 @@
 
         .text-shadow-sm { text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
 
+        /* Модалка */
         .modal {
             opacity: 0;
             visibility: hidden;
@@ -68,7 +78,7 @@
 
 <div class="flex min-h-screen w-full">
 
-    <aside class="sidebar hidden lg:flex flex-col border-r border-gray-200 bg-white px-6 py-6 w-64 fixed h-full z-20">
+    <aside class="sidebar hidden lg:flex flex-col border-r border-gray-200 bg-white px-6 py-6 w-64 fixed h-full z-20 top-0 left-0">
         <div class="mb-8 flex items-center gap-2 px-2">
             <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white">
                 <i data-lucide="wallet" class="h-5 w-5"></i>
@@ -105,19 +115,20 @@
     <main class="main-content flex-1 lg:ml-64 p-8 overflow-y-auto min-h-screen">
 
         <#if successMessage??>
-            <div id="alert-box" class="mb-6 rounded-lg bg-emerald-50 p-4 border border-emerald-200 flex items-center gap-3 shadow-sm">
+            <div id="alert-box" class="mb-6 rounded-lg bg-emerald-50 p-4 border border-emerald-200 flex items-center gap-3 shadow-sm animate-fade-in">
                 <i data-lucide="check-circle" class="h-5 w-5 text-emerald-600"></i>
                 <p class="text-sm font-medium text-emerald-800">${successMessage}</p>
             </div>
         </#if>
         <#if errorMessage??>
-            <div id="alert-box" class="mb-6 rounded-lg bg-red-50 p-4 border border-red-200 flex items-center gap-3 shadow-sm">
+            <div id="alert-box" class="mb-6 rounded-lg bg-red-50 p-4 border border-red-200 flex items-center gap-3 shadow-sm animate-fade-in">
                 <i data-lucide="alert-circle" class="h-5 w-5 text-red-600"></i>
                 <p class="text-sm font-medium text-red-800">${errorMessage}</p>
             </div>
         </#if>
 
-        <div class="space-y-8 max-w-6xl mx-auto">
+        <div class="space-y-8 max-w-6xl mx-auto animate-fade-in">
+
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900">My Cards</h1>
@@ -145,7 +156,6 @@
                         <div class="card-container w-full h-full relative cursor-pointer" onclick="toggleFlip(this)">
 
                             <div class="card-face card-front ${bgClass} p-6 flex flex-col justify-between text-white">
-
                                 <div class="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none"></div>
 
                                 <div class="relative z-10 flex justify-between items-start">
@@ -209,7 +219,6 @@
 
                             <div class="card-face card-back ${bgClass} flex flex-col">
                                 <div class="absolute inset-0 bg-black/20 pointer-events-none"></div>
-
                                 <div class="w-full h-10 bg-[#111] mt-6 relative z-10 border-y border-black/30"></div>
 
                                 <div class="px-6 mt-4 flex-1 relative z-10 flex flex-col">
