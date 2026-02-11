@@ -5,15 +5,12 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/**
- * Конфігурація Spring MVC
- */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Статичні ресурси
+        // Це дозволяє завантажувати картинки та стилі, якщо вони лежать у static
         registry.addResourceHandler("/css/**")
                 .addResourceLocations("classpath:/static/css/");
 
@@ -26,6 +23,8 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
+        // Це перенаправляє головну сторінку "/" на index.html (якщо він є)
+        // або можна змінити на "forward:/login" якщо хочете, щоб спочатку був логін
         registry.addViewController("/").setViewName("forward:/index.html");
     }
 }

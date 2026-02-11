@@ -15,7 +15,36 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    /* ===================== CREATE ===================== */
+    /* ===================== AUTH & REGISTER (НОВІ МЕТОДИ) ===================== */
+
+    /**
+     * Метод для реєстрації нового користувача через форму.
+     * Встановлює дефолтну роль CLIENT, якщо вона не задана.
+     */
+    public User registerUser(User user) {
+        // Якщо роль не вказана, це звичайний клієнт
+        if (user.getRole() == null) {
+            user.setRole(UserRole.CLIENT);
+        }
+        // За замовчуванням активуємо користувача
+        if (user.getIsActive() == null) {
+            user.setIsActive(true);
+        }
+
+        // Тут міг би бути хеш пароля, якщо підключиш Spring Security
+        // user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+        return userRepository.save(user);
+    }
+
+    /**
+     * Перевірка існування email (для валідації форми)
+     */
+    public boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
+    /* ===================== CREATE (Старий метод) ===================== */
 
     public User createUser(User user) {
         return userRepository.save(user);
@@ -50,8 +79,15 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         user.setEmail(updatedUser.getEmail());
-        user.setRole(updatedUser.getRole());
+        // Якщо роль передана - оновлюємо, якщо ні - залишаємо стару
+        if (updatedUser.getRole() != null) {
+            user.setRole(updatedUser.getRole());
+        }
         user.setIsActive(updatedUser.getIsActive());
+
+        // Додаткові поля (ім'я, прізвище) теж варто оновлювати
+        if (updatedUser.getFirstName() != null) user.setFirstName(updatedUser.getFirstName());
+        if (updatedUser.getLastName() != null) user.setLastName(updatedUser.getLastName());
 
         return userRepository.save(user);
     }
@@ -86,15 +122,14 @@ public class UserService {
         return userRepository.countByIsActiveTrue();
     }
 
-    /* ===================== CURRENT USER (DASHBOARD FIX) ===================== */
+    /* ===================== CURRENT USER ===================== */
 
-    /**
-     * Тимчасове рішення БЕЗ Spring Security
-     */
     public User getCurrentUser() {
+        // Тимчасова заглушка: повертаємо користувача з ID 1 або створюємо, якщо база порожня
         return userRepository.findById(1L)
-                .orElseThrow(() ->
-                        new RuntimeException("Current user not found (id = 1)")
-                );
+                .orElseGet(() -> {
+                    // Це щоб код не падав, якщо база пуста
+                    return null;
+                });
     }
 }

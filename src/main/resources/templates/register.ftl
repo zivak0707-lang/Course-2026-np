@@ -3,323 +3,224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Реєстрація - PayFlow</title>
-
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="/css/style.css" rel="stylesheet">
+    <title>Register - PayFlow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // noinspection JSUnresolvedVariable
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { DEFAULT: "hsl(221.2 83.2% 53.3%)", foreground: "hsl(210 40% 98%)" },
+                        background: "hsl(0 0% 100%)",
+                        foreground: "hsl(222.2 84% 4.9%)",
+                        muted: { DEFAULT: "hsl(210 40% 96.1%)", foreground: "hsl(215.4 16.3% 46.9%)" },
+                        input: "hsl(214.3 31.8% 91.4%)",
+                        success: "hsl(142 76% 36%)"
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .step-hidden { display: none; }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
 </head>
-<body>
-    <div class="min-vh-100 d-flex align-items-center justify-content-center position-relative py-5" 
-         style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(255, 255, 255, 1) 50%, rgba(37, 99, 235, 0.1) 100%);">
-        
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-md-8 col-lg-6 col-xl-5">
-                    <div class="card shadow-lg border-0 animate-scale-in">
-                        <div class="card-body p-4 p-md-5">
-                            <!-- Logo -->
-                            <div class="text-center mb-4">
-                                <a href="/" class="text-decoration-none">
-                                    <div class="d-flex align-items-center justify-content-center gap-2 mb-3">
-                                        <i class="bi bi-wallet2 fs-3 text-primary"></i>
-                                        <span class="fs-4 fw-bold text-primary">PayFlow</span>
-                                    </div>
-                                </a>
-                                <h4 class="fw-bold mb-2">Створити обліковий запис</h4>
-                                <p class="text-muted small">Почніть керувати фінансами вже сьогодні</p>
-                            </div>
+<body class="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-blue-50 via-white to-blue-100 font-sans text-slate-900">
 
-                            <!-- Progress Indicator -->
-                            <div class="mb-4">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="badge bg-primary" id="step-badge-1">1. Особисті дані</span>
-                                    <span class="badge bg-secondary" id="step-badge-2">2. Пароль</span>
-                                    <span class="badge bg-secondary" id="step-badge-3">3. Завершення</span>
-                                </div>
-                                <div class="progress" style="height: 4px;">
-                                    <div class="progress-bar bg-primary" id="progress-bar" role="progressbar" 
-                                         style="width: 33%" aria-valuenow="33" aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                            </div>
+<div class="rounded-lg border bg-white text-slate-950 shadow-sm w-full max-w-md">
 
-                            <!-- Registration Form -->
-                            <form action="/register" method="POST" id="registerForm" novalidate>
-                                <!-- Step 1: Personal Info -->
-                                <div id="step-content-1">
-                                    <div class="mb-3">
-                                        <label for="firstName" class="form-label">Ім'я *</label>
-                                        <input type="text" class="form-control" id="firstName" name="firstName" 
-                                               placeholder="Іван" required>
-                                        <div class="invalid-feedback">Введіть ім'я</div>
-                                    </div>
+    <div class="flex flex-col space-y-1.5 p-6 text-center">
+        <a href="/" class="inline-flex items-center justify-center gap-2 text-primary font-bold text-xl mb-2 no-underline">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>
+            PayFlow
+        </a>
+        <h3 class="text-2xl font-semibold leading-none tracking-tight">Create Account</h3>
+        <p class="text-sm text-slate-500" id="step-indicator">Step 1 of 3</p>
 
-                                    <div class="mb-3">
-                                        <label for="lastName" class="form-label">Прізвище *</label>
-                                        <input type="text" class="form-control" id="lastName" name="lastName" 
-                                               placeholder="Іваненко" required>
-                                        <div class="invalid-feedback">Введіть прізвище</div>
-                                    </div>
-
-                                    <div class="mb-4">
-                                        <label for="email" class="form-label">Email *</label>
-                                        <input type="email" class="form-control" id="email" name="email" 
-                                               placeholder="ivan@example.com" required>
-                                        <div class="invalid-feedback">Введіть коректний email</div>
-                                    </div>
-
-                                    <button type="button" class="btn btn-primary w-100" onclick="goToStep(2)">
-                                        Далі <i class="bi bi-arrow-right ms-2"></i>
-                                    </button>
-                                </div>
-
-                                <!-- Step 2: Password -->
-                                <div id="step-content-2" style="display: none;">
-                                    <div class="mb-3">
-                                        <label for="password" class="form-label">Пароль *</label>
-                                        <div class="position-relative">
-                                            <input type="password" class="form-control" id="password" name="password" 
-                                                   placeholder="Мінімум 8 символів" minlength="8" required>
-                                            <button type="button" class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted" 
-                                                    onclick="togglePasswordVisibility('password')" tabindex="-1">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                        </div>
-                                        <div class="invalid-feedback">Пароль має містити мінімум 8 символів</div>
-                                    </div>
-
-                                    <div class="mb-4">
-                                        <label for="confirmPassword" class="form-label">Підтвердження паролю *</label>
-                                        <div class="position-relative">
-                                            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" 
-                                                   placeholder="Повторіть пароль" minlength="8" required>
-                                            <button type="button" class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted" 
-                                                    onclick="togglePasswordVisibility('confirmPassword')" tabindex="-1">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                        </div>
-                                        <div class="invalid-feedback" id="confirm-password-error">Паролі не співпадають</div>
-                                    </div>
-
-                                    <div class="d-flex gap-2">
-                                        <button type="button" class="btn btn-outline-secondary w-100" onclick="goToStep(1)">
-                                            <i class="bi bi-arrow-left me-2"></i> Назад
-                                        </button>
-                                        <button type="button" class="btn btn-primary w-100" onclick="goToStep(3)">
-                                            Далі <i class="bi bi-arrow-right ms-2"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Step 3: Confirmation -->
-                                <div id="step-content-3" style="display: none;">
-                                    <div class="text-center mb-4">
-                                        <div class="mb-3">
-                                            <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
-                                        </div>
-                                        <h5 class="fw-semibold mb-2">Майже готово!</h5>
-                                        <p class="text-muted small">Перевірте введені дані перед реєстрацією</p>
-                                    </div>
-
-                                    <div class="card bg-light border-0 mb-4">
-                                        <div class="card-body">
-                                            <div class="mb-2">
-                                                <small class="text-muted">Ім'я та прізвище</small>
-                                                <p class="mb-0 fw-medium" id="summary-name">-</p>
-                                            </div>
-                                            <div>
-                                                <small class="text-muted">Email</small>
-                                                <p class="mb-0 fw-medium" id="summary-email">-</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-check mb-4">
-                                        <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
-                                        <label class="form-check-label small" for="terms">
-                                            Я погоджуюсь з <a href="#" class="text-primary">умовами використання</a> 
-                                            та <a href="#" class="text-primary">політикою конфіденційності</a>
-                                        </label>
-                                        <div class="invalid-feedback">Необхідно прийняти умови</div>
-                                    </div>
-
-                                    <div class="d-flex gap-2">
-                                        <button type="button" class="btn btn-outline-secondary w-100" onclick="goToStep(2)">
-                                            <i class="bi bi-arrow-left me-2"></i> Назад
-                                        </button>
-                                        <button type="submit" class="btn btn-success w-100">
-                                            <i class="bi bi-check-lg me-2"></i> Зареєструватися
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
-
-                            <p class="text-center text-muted small mt-4 mb-0">
-                                Вже маєте обліковий запис?
-                                <a href="/login" class="text-primary text-decoration-none fw-medium">Увійти</a>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="relative h-2 w-full overflow-hidden rounded-full bg-slate-100 mt-3">
+            <div id="progress-bar" class="h-full w-full flex-1 bg-blue-600 transition-all duration-300" style="width: 33%"></div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/static/js/main.js"></script>
-    <script>
-        let currentStep = 1;
+    <form id="registerForm" action="/register" method="POST">
 
-        function goToStep(targetStep) {
-            // Validate current step before moving forward
-            if (targetStep > currentStep) {
-                if (currentStep === 1 && !validateStep1()) {
-                    return;
-                }
-                if (currentStep === 2 && !validateStep2()) {
-                    return;
-                }
-            }
+        <div class="p-6 pt-0 space-y-4">
 
-            // Hide current step
-            document.getElementById('step-content-' + currentStep).style.display = 'none';
-            document.getElementById('step-badge-' + currentStep).classList.remove('bg-primary');
-            document.getElementById('step-badge-' + currentStep).classList.add('bg-secondary');
+            <div id="step-1" class="space-y-4 animate-fade-in">
+                <div class="space-y-2">
+                    <label for="firstName" class="text-sm font-medium leading-none">First Name *</label>
+                    <input type="text" name="firstName" id="firstName" placeholder="John" required
+                           class="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-blue-600 outline-none">
+                </div>
+                <div class="space-y-2">
+                    <label for="lastName" class="text-sm font-medium leading-none">Last Name *</label>
+                    <input type="text" name="lastName" id="lastName" placeholder="Doe" required
+                           class="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-blue-600 outline-none">
+                </div>
+                <div class="space-y-2">
+                    <label for="email" class="text-sm font-medium leading-none">Email *</label>
+                    <input type="email" name="email" id="email" placeholder="john@example.com" required
+                           class="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-blue-600 outline-none">
+                </div>
+            </div>
 
-            // Show target step
-            currentStep = targetStep;
-            document.getElementById('step-content-' + currentStep).style.display = 'block';
-            document.getElementById('step-badge-' + currentStep).classList.remove('bg-secondary');
-            document.getElementById('step-badge-' + currentStep).classList.add('bg-primary');
+            <div id="step-2" class="space-y-4 step-hidden animate-fade-in">
+                <div class="space-y-2">
+                    <label for="reg-password" class="text-sm font-medium leading-none">Password *</label>
+                    <div class="relative">
+                        <input type="password" name="password" id="reg-password" placeholder="••••••••" required
+                               class="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-blue-600 outline-none">
+                        <button type="button" onclick="toggleRegPassword()"
+                                aria-label="Toggle password visibility"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 rounded">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <label for="confirmPassword" class="text-sm font-medium leading-none">Confirm Password *</label>
+                    <input type="password" id="confirmPassword" placeholder="••••••••" required
+                           class="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-blue-600 outline-none">
+                    <p id="password-error" class="text-xs text-red-500 hidden">Passwords do not match</p>
+                </div>
+            </div>
 
-            // Update progress bar
-            const progress = (currentStep / 3) * 100;
-            document.getElementById('progress-bar').style.width = progress + '%';
+            <div id="step-3" class="text-center py-6 step-hidden animate-fade-in">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-green-600 mx-auto mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="m9 12 2 2 4-4"/>
+                </svg>
+                <h3 class="text-xl font-semibold mb-2">All Set!</h3>
+                <p class="text-sm text-slate-500">
+                    Click below to create your account and access the dashboard.
+                </p>
+            </div>
 
-            // Update summary if moving to step 3
-            if (currentStep === 3) {
-                updateSummary();
-            }
+        </div>
+
+        <div class="flex items-center p-6 pt-0 flex-col gap-3">
+            <div class="flex gap-3 w-full">
+                <button type="button" id="backBtn" onclick="prevStep()" class="hidden flex-1 inline-flex items-center justify-center rounded-md text-sm font-medium border border-slate-200 bg-white hover:bg-slate-100 h-10 px-4 py-2">
+                    Back
+                </button>
+
+                <button type="button" id="nextBtn" onclick="nextStep()" class="flex-1 inline-flex items-center justify-center rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-600/90 h-10 px-4 py-2">
+                    Next
+                </button>
+
+                <button type="submit" id="submitBtn" class="hidden flex-1 inline-flex items-center justify-center rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-600/90 h-10 px-4 py-2">
+                    Go to Dashboard
+                </button>
+            </div>
+
+            <p class="text-sm text-slate-500">
+                Already have an account?
+                <a href="/login" class="text-blue-600 hover:underline">Sign in</a>
+            </p>
+        </div>
+    </form>
+</div>
+
+<script>
+    let currentStep = 1;
+    const totalSteps = 3;
+
+    function updateUI() {
+        // Hide all steps
+        const step1 = document.getElementById('step-1');
+        const step2 = document.getElementById('step-2');
+        const step3 = document.getElementById('step-3');
+
+        step1.classList.add('step-hidden');
+        step2.classList.add('step-hidden');
+        step3.classList.add('step-hidden');
+
+        // Show current step
+        document.getElementById('step-' + currentStep).classList.remove('step-hidden');
+
+        // Update Progress Bar
+        const progress = (currentStep / totalSteps) * 100;
+        const progressBar = document.getElementById('progress-bar');
+        progressBar.style.width = progress + '%';
+
+        const stepIndicator = document.getElementById('step-indicator');
+        stepIndicator.innerText = 'Step ' + currentStep + ' of ' + totalSteps;
+
+        // Handle Buttons Visibility
+        const backBtn = document.getElementById('backBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const submitBtn = document.getElementById('submitBtn');
+
+        if (currentStep === 1) {
+            backBtn.classList.add('hidden');
+            nextBtn.classList.remove('hidden');
+            submitBtn.classList.add('hidden');
+            nextBtn.innerText = "Next";
+        } else if (currentStep === 2) {
+            backBtn.classList.remove('hidden');
+            nextBtn.classList.remove('hidden');
+            submitBtn.classList.add('hidden');
+            nextBtn.innerText = "Create Account";
+        } else if (currentStep === 3) {
+            backBtn.classList.add('hidden');
+            nextBtn.classList.add('hidden');
+            submitBtn.classList.remove('hidden');
         }
+    }
 
-        function validateStep1() {
-            const firstName = document.getElementById('firstName');
-            const lastName = document.getElementById('lastName');
-            const email = document.getElementById('email');
-
-            let isValid = true;
-
-            if (!firstName.value.trim()) {
-                firstName.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                firstName.classList.remove('is-invalid');
-            }
-
-            if (!lastName.value.trim()) {
-                lastName.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                lastName.classList.remove('is-invalid');
-            }
-
-            if (!email.value.trim() || !email.validity.valid) {
-                email.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                email.classList.remove('is-invalid');
-            }
-
-            return isValid;
-        }
-
-        function validateStep2() {
-            const password = document.getElementById('password');
-            const confirmPassword = document.getElementById('confirmPassword');
-
-            let isValid = true;
-
-            if (!password.value || password.value.length < 8) {
-                password.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                password.classList.remove('is-invalid');
-            }
-
-            if (password.value !== confirmPassword.value) {
-                confirmPassword.classList.add('is-invalid');
-                document.getElementById('confirm-password-error').textContent = 'Паролі не співпадають';
-                isValid = false;
-            } else if (!confirmPassword.value || confirmPassword.value.length < 8) {
-                confirmPassword.classList.add('is-invalid');
-                document.getElementById('confirm-password-error').textContent = 'Пароль має містити мінімум 8 символів';
-                isValid = false;
-            } else {
-                confirmPassword.classList.remove('is-invalid');
-            }
-
-            return isValid;
-        }
-
-        function updateSummary() {
-            const firstName = document.getElementById('firstName').value;
-            const lastName = document.getElementById('lastName').value;
+    function validateStep(step) {
+        if (step === 1) {
+            const fName = document.getElementById('firstName').value;
+            const lName = document.getElementById('lastName').value;
             const email = document.getElementById('email').value;
+            return fName && lName && email;
+        }
+        if (step === 2) {
+            const pass = document.getElementById('reg-password').value;
+            const confirm = document.getElementById('confirmPassword').value;
+            const error = document.getElementById('password-error');
 
-            document.getElementById('summary-name').textContent = firstName + ' ' + lastName;
-            document.getElementById('summary-email').textContent = email;
+            if (!pass || !confirm) return false;
+            if (pass !== confirm) {
+                error.classList.remove('hidden');
+                return false;
+            } else {
+                error.classList.add('hidden');
+                return true;
+            }
+        }
+        return true;
+    }
+
+    function nextStep() {
+        if (!validateStep(currentStep)) {
+            alert("Please fill in all required fields correctly.");
+            return;
         }
 
-        // Real-time validation
-        document.getElementById('firstName').addEventListener('input', function() {
-            if (this.value.trim()) {
-                this.classList.remove('is-invalid');
-            }
-        });
+        if (currentStep < totalSteps) {
+            currentStep++;
+            updateUI();
+        }
+    }
 
-        document.getElementById('lastName').addEventListener('input', function() {
-            if (this.value.trim()) {
-                this.classList.remove('is-invalid');
-            }
-        });
+    function prevStep() {
+        if (currentStep > 1) {
+            currentStep--;
+            updateUI();
+        }
+    }
 
-        document.getElementById('email').addEventListener('input', function() {
-            if (this.value.trim() && this.validity.valid) {
-                this.classList.remove('is-invalid');
-            }
-        });
-
-        document.getElementById('password').addEventListener('input', function() {
-            if (this.value.length >= 8) {
-                this.classList.remove('is-invalid');
-            }
-        });
-
-        document.getElementById('confirmPassword').addEventListener('input', function() {
-            const password = document.getElementById('password').value;
-            if (this.value === password && this.value.length >= 8) {
-                this.classList.remove('is-invalid');
-            }
-        });
-
-        // Form submission
-        document.getElementById('registerForm').addEventListener('submit', function(e) {
-            const terms = document.getElementById('terms');
-            if (!terms.checked) {
-                e.preventDefault();
-                terms.classList.add('is-invalid');
-                terms.parentElement.querySelector('.invalid-feedback').style.display = 'block';
-            }
-        });
-
-        document.getElementById('terms').addEventListener('change', function() {
-            if (this.checked) {
-                this.classList.remove('is-invalid');
-                this.parentElement.querySelector('.invalid-feedback').style.display = 'none';
-            }
-        });
-    </script>
+    function toggleRegPassword() {
+        const input = document.getElementById('reg-password');
+        input.type = input.type === 'password' ? 'text' : 'password';
+    }
+</script>
 </body>
 </html>
