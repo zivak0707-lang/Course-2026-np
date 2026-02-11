@@ -9,69 +9,66 @@
     <title>My Cards - PayFlow</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
 
-        /* 3D Flip Styles */
-        .perspective-1000 {
-            perspective: 1200px;
-        }
+        .font-credit { font-family: 'Share Tech Mono', monospace; }
+        .font-mono-details { font-family: 'JetBrains Mono', monospace; }
 
-        .card-inner {
+        /* 3D Flip */
+        .perspective-1000 { perspective: 1200px; }
+        .card-container {
             position: relative;
             width: 100%;
             height: 100%;
-            text-align: center;
-            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
             transform-style: preserve-3d;
         }
+        .card-container.flipped { transform: rotateY(180deg); }
 
-        .card-container.flipped .card-inner {
-            transform: rotateY(180deg);
-        }
-
-        .card-front, .card-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
+        .card-face {
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
-            border-radius: 1rem;
+            position: absolute;
+            inset: 0;
+            border-radius: 1.25rem;
             overflow: hidden;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .card-back { transform: rotateY(180deg); }
+
+        /* Чистий Золотий Чіп (БЕЗ чорних ліній) */
+        .chip-metallic {
+            background: linear-gradient(135deg, #fce3b4 0%, #eec476 50%, #d4af37 100%);
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.4), 0 1px 2px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
         }
 
-        .card-back {
-            transform: rotateY(180deg);
-        }
+        .text-shadow-sm { text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
 
-        /* Modal Animation */
         .modal {
             opacity: 0;
             visibility: hidden;
-            transition: all 0.3s ease-in-out;
+            transition: opacity 0.2s ease, visibility 0.2s;
         }
-        .modal.open {
-            opacity: 1;
-            visibility: visible;
-        }
+        .modal.open { opacity: 1; visibility: visible; }
         .modal-content {
-            transform: scale(0.95) translateY(10px);
-            transition: all 0.3s ease-in-out;
+            transform: scale(0.95);
+            transition: transform 0.2s ease;
         }
-        .modal.open .modal-content {
-            transform: scale(1) translateY(0);
-        }
+        .modal.open .modal-content { transform: scale(1); }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
 
 <div class="flex min-h-screen w-full">
 
-    <aside class="sidebar hidden lg:flex flex-col border-r border-gray-200 bg-white px-6 py-6">
+    <aside class="sidebar hidden lg:flex flex-col border-r border-gray-200 bg-white px-6 py-6 w-64 fixed h-full z-20">
         <div class="mb-8 flex items-center gap-2 px-2">
             <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white">
                 <i data-lucide="wallet" class="h-5 w-5"></i>
@@ -79,54 +76,54 @@
             <span class="text-xl font-bold tracking-tight text-blue-900">PayFlow</span>
         </div>
         <nav class="flex flex-1 flex-col space-y-1">
-            <a href="/dashboard" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+            <a href="/dashboard" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
                 <i data-lucide="layout-dashboard" class="h-4 w-4"></i> Dashboard
             </a>
-            <a href="/dashboard/accounts" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+            <a href="/dashboard/accounts" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
                 <i data-lucide="credit-card" class="h-4 w-4"></i> My Accounts
             </a>
-            <a href="/dashboard/cards" class="group flex items-center gap-3 rounded-md bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700">
+            <a href="/dashboard/cards" class="group flex items-center gap-3 rounded-md bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors">
                 <i data-lucide="credit-card" class="h-4 w-4"></i> My Cards
             </a>
-            <a href="/dashboard/payment" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+            <a href="/dashboard/payment" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
                 <i data-lucide="send" class="h-4 w-4"></i> Make Payment
             </a>
-            <a href="/dashboard/transactions" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+            <a href="/dashboard/transactions" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
                 <i data-lucide="list" class="h-4 w-4"></i> Transactions
             </a>
-            <a href="/dashboard/settings" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+            <a href="/dashboard/settings" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
                 <i data-lucide="settings" class="h-4 w-4"></i> Settings
             </a>
         </nav>
         <div class="mt-auto border-t border-gray-200 pt-4">
-            <a href="/dashboard/logout" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600">
+            <a href="/dashboard/logout" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors">
                 <i data-lucide="log-out" class="h-4 w-4"></i> Logout
             </a>
         </div>
     </aside>
 
-    <main class="main-content flex-1 overflow-auto p-8">
+    <main class="main-content flex-1 lg:ml-64 p-8 overflow-y-auto min-h-screen">
 
         <#if successMessage??>
-            <div id="alert-box" class="mb-6 rounded-md bg-green-50 p-4 border border-green-200 flex items-center gap-3">
-                <i data-lucide="check-circle" class="h-5 w-5 text-green-500"></i>
-                <p class="text-sm font-medium text-green-800">${successMessage}</p>
+            <div id="alert-box" class="mb-6 rounded-lg bg-emerald-50 p-4 border border-emerald-200 flex items-center gap-3 shadow-sm">
+                <i data-lucide="check-circle" class="h-5 w-5 text-emerald-600"></i>
+                <p class="text-sm font-medium text-emerald-800">${successMessage}</p>
             </div>
         </#if>
         <#if errorMessage??>
-            <div id="alert-box" class="mb-6 rounded-md bg-red-50 p-4 border border-red-200 flex items-center gap-3">
-                <i data-lucide="alert-circle" class="h-5 w-5 text-red-500"></i>
+            <div id="alert-box" class="mb-6 rounded-lg bg-red-50 p-4 border border-red-200 flex items-center gap-3 shadow-sm">
+                <i data-lucide="alert-circle" class="h-5 w-5 text-red-600"></i>
                 <p class="text-sm font-medium text-red-800">${errorMessage}</p>
             </div>
         </#if>
 
-        <div class="space-y-6 animate-fade-in mx-auto max-w-5xl">
+        <div class="space-y-8 max-w-6xl mx-auto">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900">My Cards</h1>
-                    <p class="text-gray-500">Manage your physical and virtual cards</p>
+                    <p class="text-gray-500 mt-1">Physical and virtual cards</p>
                 </div>
-                <button onclick="openModal()" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all">
+                <button onclick="openModal()" class="inline-flex items-center justify-center rounded-lg bg-gray-900 px-5 py-2 text-sm font-medium text-white shadow hover:bg-black transition-all">
                     <i data-lucide="plus" class="h-4 w-4 mr-2"></i> Add Card
                 </button>
             </div>
@@ -134,222 +131,259 @@
             <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
                 <#list cards as card>
                     <#assign themeIndex = card?index % 3>
-                    <#assign gradientClass = "">
+                    <#assign bgClass = "">
 
                     <#if themeIndex == 0>
-                        <#assign gradientClass = "bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460]">
+                        <#assign bgClass = "bg-gradient-to-br from-gray-800 via-gray-900 to-black">
                     <#elseif themeIndex == 1>
-                        <#assign gradientClass = "bg-gradient-to-br from-[#0d0d0d] via-[#1a1a2e] to-[#2d2d44]">
+                        <#assign bgClass = "bg-gradient-to-br from-blue-900 via-slate-800 to-gray-900">
                     <#else>
-                        <#assign gradientClass = "bg-gradient-to-br from-[#134e5e] via-[#1a6b7a] to-[#71b280]">
+                        <#assign bgClass = "bg-gradient-to-br from-emerald-900 via-teal-900 to-slate-900">
                     </#if>
 
-                    <div class="group perspective-1000 h-[240px]" onmouseleave="unflipCard(this)">
-                        <div class="card-container w-full h-full cursor-pointer relative" onclick="toggleFlip(this)">
-                            <div class="card-inner w-full h-full shadow-2xl rounded-2xl transition-all duration-300 group-hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)]">
+                    <div class="group perspective-1000 h-[220px]" onmouseleave="unflipCard(this)">
+                        <div class="card-container w-full h-full relative cursor-pointer" onclick="toggleFlip(this)">
 
-                                <div class="card-front ${gradientClass} p-6 flex flex-col justify-between text-white">
-                                    <div class="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent pointer-events-none"></div>
-                                    <div class="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-                                    <div class="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
+                            <div class="card-face card-front ${bgClass} p-6 flex flex-col justify-between text-white">
 
-                                    <div class="relative flex justify-between items-start z-10">
-                                        <span class="text-white/90 text-sm font-bold tracking-[0.2em] uppercase">
-                                            PAYFLOW
-                                        </span>
-                                        <i data-lucide="wifi" class="h-5 w-5 text-white/60 rotate-90"></i>
+                                <div class="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none"></div>
+
+                                <div class="relative z-10 flex justify-between items-start">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="wallet" class="h-5 w-5 text-white/90"></i>
+                                        <span class="font-bold text-sm tracking-wide opacity-90">PayFlow</span>
+                                    </div>
+                                    <i data-lucide="wifi" class="h-6 w-6 text-white/70 rotate-90"></i>
+                                </div>
+
+                                <div class="relative z-10 mt-2">
+                                    <div class="w-11 h-8 rounded-md chip-metallic mb-4 relative overflow-hidden">
+                                        <div class="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent opacity-50"></div>
                                     </div>
 
-                                    <div class="relative flex items-center gap-4 z-10">
-                                        <div class="w-12 h-9 rounded-md bg-gradient-to-br from-yellow-300/90 via-yellow-400/80 to-yellow-600/70 shadow-inner flex items-center justify-center">
-                                            <div class="w-8 h-6 rounded-sm border border-yellow-700/30 grid grid-cols-3 grid-rows-2 gap-px overflow-hidden">
-                                                <div class="bg-yellow-500/40"></div><div class="bg-yellow-500/40"></div><div class="bg-yellow-500/40"></div>
-                                                <div class="bg-yellow-500/40"></div><div class="bg-yellow-500/40"></div><div class="bg-yellow-500/40"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="relative z-10">
-                                        <p class="text-lg sm:text-xl font-mono tracking-[0.15em] drop-shadow-md">
+                                    <div class="flex items-center justify-between">
+                                        <p class="font-credit text-[22px] tracking-widest text-white text-shadow-sm whitespace-nowrap overflow-visible"
+                                           id="cardNumberText-${card.id}"
+                                           data-full="${card.cardNumber}"
+                                           data-masked="true">
                                             **** **** **** ${card.cardNumber?substring(card.cardNumber?length - 4)}
                                         </p>
                                     </div>
-
-                                    <div class="relative flex justify-between items-end z-10">
-                                        <div>
-                                            <p class="text-white/40 text-[9px] uppercase tracking-widest mb-0.5">Card Holder</p>
-                                            <p class="text-sm font-semibold tracking-wide uppercase">${card.cardholderName}</p>
-                                        </div>
-                                        <span class="text-white/90 text-xs font-bold tracking-[0.15em] uppercase">
-                                            <#if card.cardNumber?starts_with("4")>VISA<#else>MASTERCARD</#if>
-                                        </span>
-                                    </div>
                                 </div>
 
-                                <div class="card-back ${gradientClass} flex flex-col">
-                                    <div class="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent pointer-events-none"></div>
-
-                                    <div class="w-full h-12 bg-black/60 mt-6 relative z-10"></div>
-
-                                    <div class="px-6 mt-4 flex-1 flex flex-col justify-between pb-6 relative z-10">
-                                        <div class="flex items-start justify-between gap-4">
-                                            <div class="text-left">
-                                                <p class="text-white/40 text-[9px] uppercase tracking-widest mb-0.5">Valid Thru</p>
-                                                <p class="text-white text-sm font-semibold">
-                                                    <#-- ✅ ВИПРАВЛЕНО: використовуємо новий метод -->
-                                                    ${card.formattedExpiryDate}
-                                                </p>
+                                <div class="relative z-10 flex justify-between items-end">
+                                    <div>
+                                        <div class="flex gap-8 mb-1">
+                                            <div>
+                                                <p class="text-[8px] uppercase text-white/50 mb-0.5">Card Holder</p>
+                                                <p class="font-medium text-xs uppercase tracking-wide overflow-hidden whitespace-nowrap max-w-[120px] text-ellipsis">${card.cardholderName}</p>
                                             </div>
-                                            <div class="text-right">
-                                                <div class="bg-white/10 rounded px-4 py-1.5 inline-block">
-                                                    <span class="text-white font-mono text-lg tracking-widest">${card.cvv}</span>
-                                                </div>
-                                                <p class="text-white/30 text-[9px] mt-1 uppercase tracking-wider">CVV</p>
-                                            </div>
-                                        </div>
-
-                                        <div class="flex items-center justify-between mt-auto">
-                                            <div class="flex items-center gap-2">
-                                                <i data-lucide="credit-card" class="h-4 w-4 text-white/30"></i>
-                                                <p class="text-white/30 text-[10px] tracking-wider">PayFlow Bank</p>
+                                            <div>
+                                                <p class="text-[8px] uppercase text-white/50 mb-0.5">Expires</p>
+                                                <p class="font-mono-details font-medium text-xs tracking-wide">${card.formattedExpiryDate}</p>
                                             </div>
                                         </div>
                                     </div>
+
+                                    <div class="mb-1">
+                                        <#if card.cardNumber?starts_with("4")>
+                                            <span class="text-2xl font-black italic tracking-tighter opacity-90">VISA</span>
+                                        <#else>
+                                            <div class="flex -space-x-3 opacity-90">
+                                                <div class="w-7 h-7 rounded-full bg-red-500/80"></div>
+                                                <div class="w-7 h-7 rounded-full bg-yellow-500/80"></div>
+                                            </div>
+                                        </#if>
+                                    </div>
                                 </div>
 
+                                <div class="absolute right-5 top-[85px] z-20 flex gap-2" onclick="event.stopPropagation()">
+                                    <button onclick="toggleCardNumber('${card.id}')" class="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors" title="Show/Hide">
+                                        <i data-lucide="eye" class="h-4 w-4"></i>
+                                    </button>
+                                    <button onclick="copyCardNumber('${card.cardNumber}', this)" class="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors" title="Copy">
+                                        <i data-lucide="copy" class="h-4 w-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="card-face card-back ${bgClass} flex flex-col">
+                                <div class="absolute inset-0 bg-black/20 pointer-events-none"></div>
+
+                                <div class="w-full h-10 bg-[#111] mt-6 relative z-10 border-y border-black/30"></div>
+
+                                <div class="px-6 mt-4 flex-1 relative z-10 flex flex-col">
+                                    <div class="flex justify-end items-center gap-3 mt-2">
+                                        <span class="text-[9px] uppercase text-white/60">CVV</span>
+                                        <div class="bg-white text-gray-900 font-mono-details font-bold text-sm px-2 py-1 rounded w-12 text-center">
+                                            ${card.cvv}
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-auto mb-6 flex justify-between items-center border-t border-white/10 pt-4">
+                                        <p class="text-[10px] text-white/50">support@payflow.com</p>
+
+                                        <button onclick="event.stopPropagation(); openDeleteModal('${card.id}', '${card.cardNumber?substring(card.cardNumber?length - 4)}')"
+                                                class="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium text-red-100 hover:bg-red-500/20 hover:text-white transition-colors border border-red-500/30">
+                                            <i data-lucide="trash-2" class="h-3 w-3"></i> Delete
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </#list>
 
-                <div onclick="openModal()" class="group h-[240px] border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors">
-                    <div class="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-                        <i data-lucide="plus" class="h-6 w-6 text-gray-400 group-hover:text-blue-600"></i>
+                <button onclick="openModal()" class="h-[220px] border-2 border-dashed border-gray-200 rounded-[1.25rem] flex flex-col items-center justify-center hover:border-blue-500 hover:bg-blue-50/30 transition-all duration-300 bg-white group">
+                    <div class="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 text-gray-400">
+                        <i data-lucide="plus" class="h-6 w-6"></i>
                     </div>
-                    <p class="mt-4 text-sm font-medium text-gray-500 group-hover:text-blue-600">Add New Card</p>
-                </div>
+                    <span class="mt-4 text-sm font-semibold text-gray-500 group-hover:text-blue-600">Add New Card</span>
+                </button>
             </div>
         </div>
     </main>
 </div>
 
 <div id="addCardModal" class="modal fixed inset-0 z-50 flex items-center justify-center">
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeModal()"></div>
-
-    <div class="modal-content relative w-full max-w-md bg-white rounded-xl shadow-2xl p-6 m-4 z-10">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal()"></div>
+    <div class="modal-content relative w-full max-w-md bg-white rounded-xl shadow-2xl p-6 z-10">
         <div class="flex items-center justify-between mb-6">
             <h2 class="text-xl font-bold text-gray-900">Add New Card</h2>
-            <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition-colors" aria-label="Close modal">
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
                 <i data-lucide="x" class="h-5 w-5"></i>
             </button>
         </div>
 
         <form action="/dashboard/cards/add" method="POST" class="space-y-4">
-            <div class="space-y-2">
-                <label for="cardNumberInput" class="text-sm font-medium text-gray-700">Card Number</label>
-                <input type="text" name="cardNumber" id="cardNumberInput" maxlength="19" placeholder="0000 0000 0000 0000" required
-                       class="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <div>
+                <label class="block text-xs font-medium text-gray-700 uppercase mb-1">Card Number</label>
+                <div class="relative">
+                    <input type="text" name="cardNumber" id="cardNumberInput" maxlength="19" placeholder="0000 0000 0000 0000" required
+                           class="block w-full rounded-lg border-gray-300 bg-gray-50 border px-3 py-2.5 text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                    <i data-lucide="credit-card" class="absolute right-3 top-2.5 h-5 w-5 text-gray-400"></i>
+                </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-2">
-                    <label for="expiryDateInput" class="text-sm font-medium text-gray-700">Expiry Date</label>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 uppercase mb-1">Expiry</label>
                     <input type="text" name="expiryDate" id="expiryDateInput" maxlength="5" placeholder="MM/YY" required
-                           class="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                           class="block w-full rounded-lg border-gray-300 bg-gray-50 border px-3 py-2.5 text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
-                <div class="space-y-2">
-                    <label for="cvvInput" class="text-sm font-medium text-gray-700">CVV</label>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 uppercase mb-1">CVV</label>
                     <input type="text" name="cvv" id="cvvInput" maxlength="3" placeholder="123" required
-                           class="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                           class="block w-full rounded-lg border-gray-300 bg-gray-50 border px-3 py-2.5 text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
             </div>
 
-            <div class="space-y-2">
-                <label for="cardholderNameInput" class="text-sm font-medium text-gray-700">Cardholder Name</label>
-                <input type="text" name="cardholderName" id="cardholderNameInput" placeholder="JOHN DOE" required
-                       class="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase">
+            <div>
+                <label class="block text-xs font-medium text-gray-700 uppercase mb-1">Cardholder Name</label>
+                <input type="text" name="cardholderName" placeholder="JOHN DOE" required
+                       class="block w-full rounded-lg border-gray-300 bg-gray-50 border px-3 py-2.5 text-sm font-medium uppercase focus:ring-2 focus:ring-blue-500 outline-none">
             </div>
 
-            <div class="pt-2 flex justify-end gap-3">
-                <button type="button" onclick="closeModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors">
-                    Cancel
-                </button>
-                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm transition-colors">
-                    Add Card
-                </button>
-            </div>
+            <button type="submit" class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20 mt-2">
+                Save Card
+            </button>
+        </form>
+    </div>
+</div>
+
+<div id="deleteCardModal" class="modal fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
+    <div class="modal-content relative w-full max-w-sm bg-white rounded-xl shadow-xl p-6 z-10 text-center">
+        <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4">
+            <i data-lucide="trash-2" class="h-6 w-6"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900">Delete Card?</h3>
+        <p class="text-sm text-gray-500 mt-2 mb-6">
+            Are you sure you want to delete card ending in <span id="deleteCardLast4" class="font-mono font-bold text-gray-800"></span>?
+        </p>
+        <form id="deleteCardForm" method="POST" class="flex gap-3">
+            <button type="button" onclick="closeDeleteModal()" class="flex-1 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50">Cancel</button>
+            <button type="submit" class="flex-1 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700">Delete</button>
         </form>
     </div>
 </div>
 
 <script>
-    if (window.lucide) {
-        window.lucide.createIcons();
-    }
+    if (window.lucide) window.lucide.createIcons();
 
     function toggleFlip(element) {
-        const container = element.closest('.card-container');
-        container.classList.toggle('flipped');
+        if (event.target.closest('button')) return;
+        element.closest('.card-container').classList.toggle('flipped');
     }
 
     function unflipCard(element) {
-        const container = element.querySelector('.card-container');
-        if (container) {
-            container.classList.remove('flipped');
+        element.querySelector('.card-container')?.classList.remove('flipped');
+    }
+
+    function toggleCardNumber(cardId) {
+        const textElement = document.getElementById('cardNumberText-' + cardId);
+        if (!textElement) return;
+
+        const isMasked = textElement.getAttribute('data-masked') === 'true';
+        const fullNumber = textElement.getAttribute('data-full');
+
+        if (isMasked) {
+            const formatted = fullNumber.match(/.{1,4}/g)?.join(' ') || fullNumber;
+            textElement.textContent = formatted;
+            textElement.setAttribute('data-masked', 'false');
+            textElement.style.letterSpacing = '0.08em';
+
+            setTimeout(() => {
+                if (textElement.getAttribute('data-masked') === 'false') toggleCardNumber(cardId);
+            }, 5000);
+        } else {
+            const last4 = fullNumber.substring(fullNumber.length - 4);
+            textElement.textContent = '**** **** **** ' + last4;
+            textElement.setAttribute('data-masked', 'true');
+            textElement.style.letterSpacing = '';
         }
     }
 
-    function openModal() {
-        const modal = document.getElementById('addCardModal');
-        modal.classList.add('open');
-    }
-
-    function closeModal() {
-        const modal = document.getElementById('addCardModal');
-        modal.classList.remove('open');
-    }
-
-    // ✅ Форматування номера картки (0000 0000 0000 0000)
-    const cardInput = document.getElementById('cardNumberInput');
-    if (cardInput) {
-        cardInput.addEventListener('input', function (e) {
-            let value = e.target.value.replace(/\D/g, '');
-            value = value.substring(0, 16);
-            e.target.value = value.match(/.{1,4}/g)?.join(' ') || value;
+    function copyCardNumber(text, btn) {
+        navigator.clipboard.writeText(text).then(() => {
+            const original = btn.innerHTML;
+            btn.innerHTML = '<i data-lucide="check" class="h-4 w-4 text-green-400"></i>';
+            if (window.lucide) window.lucide.createIcons();
+            setTimeout(() => {
+                btn.innerHTML = original;
+                if (window.lucide) window.lucide.createIcons();
+            }, 1500);
         });
     }
 
-    // ✅ Форматування дати експірації (MM/YY)
-    const expiryInput = document.getElementById('expiryDateInput');
-    if (expiryInput) {
-        expiryInput.addEventListener('input', function (e) {
-            let value = e.target.value.replace(/\D/g, '');
+    function openModal() { document.getElementById('addCardModal').classList.add('open'); }
+    function closeModal() { document.getElementById('addCardModal').classList.remove('open'); }
 
-            if (value.length >= 2) {
-                value = value.substring(0, 2) + '/' + value.substring(2, 4);
-            }
-
-            e.target.value = value.substring(0, 5);
-        });
+    function openDeleteModal(id, last4) {
+        document.getElementById('deleteCardForm').action = '/dashboard/cards/delete/' + id;
+        document.getElementById('deleteCardLast4').textContent = last4;
+        document.getElementById('deleteCardModal').classList.add('open');
     }
+    function closeDeleteModal() { document.getElementById('deleteCardModal').classList.remove('open'); }
 
-    // ✅ Тільки цифри для CVV
-    const cvvInput = document.getElementById('cvvInput');
-    if (cvvInput) {
-        cvvInput.addEventListener('input', function (e) {
-            e.target.value = e.target.value.replace(/\D/g, '').substring(0, 3);
-        });
-    }
+    document.getElementById('cardNumberInput')?.addEventListener('input', e => {
+        let v = e.target.value.replace(/\D/g, '').substring(0,16);
+        e.target.value = v.match(/.{1,4}/g)?.join(' ') || v;
+    });
+    document.getElementById('expiryDateInput')?.addEventListener('input', e => {
+        let v = e.target.value.replace(/\D/g, '');
+        if(v.length >= 2) v = v.substring(0,2) + '/' + v.substring(2,4);
+        e.target.value = v.substring(0,5);
+    });
+    document.getElementById('cvvInput')?.addEventListener('input', e => {
+        e.target.value = e.target.value.replace(/\D/g, '').substring(0,3);
+    });
 
-    // Auto-hide alerts after 4 seconds
     setTimeout(() => {
-        const alertBox = document.getElementById('alert-box');
-        if (alertBox) {
-            alertBox.style.transition = "opacity 0.5s";
-            alertBox.style.opacity = "0";
-            setTimeout(() => alertBox.remove(), 500);
-        }
+        const box = document.getElementById('alert-box');
+        if(box) { box.style.opacity = '0'; setTimeout(() => box.remove(), 300); }
     }, 4000);
 </script>
+
 </body>
 </html>
