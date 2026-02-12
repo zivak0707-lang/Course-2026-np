@@ -26,6 +26,11 @@
         .animate-fade-in {
             animation: fadeIn 0.5s ease-out;
         }
+        
+        /* Modal styles */
+        .modal-backdrop {
+            backdrop-filter: blur(4px);
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
@@ -171,7 +176,6 @@
                 <#if accounts?? && (accounts?size > 0)>
                     <#list accounts as account>
                     <#-- Calculate balance percentage for progress bar -->
-                    <#-- ВИПРАВЛЕННЯ ТУТ: Додано перевірку на 0, щоб уникнути помилки division by zero -->
                         <#if maxBalance?? && maxBalance gt 0>
                             <#assign balancePercent = (account.balance / maxBalance * 100)?round>
                         <#else>
@@ -271,7 +275,8 @@
     </main>
 </div>
 
-<div id="addAccountModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+<!-- 🆕 Modal для додавання акаунту -->
+<div id="addAccountModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 modal-backdrop">
     <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-6 space-y-4">
         <div class="flex items-center justify-between">
             <h3 class="text-lg font-semibold">Add New Account</h3>
@@ -302,40 +307,99 @@
             </button>
         </div>
 
-        <div class="flex gap-2 pt-2">
-            <button onclick="closeAddAccountModal()" class="flex-1 inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-all">
-                Cancel
+        <form method="POST" action="/api/accounts/create" id="addAccountForm">
+            <input type="hidden" id="accountTypeInput" name="accountType" required>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="closeAddAccountModal()" class="flex-1 inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                    Cancel
+                </button>
+                <button type="submit" id="submitAccountBtn" disabled class="flex-1 inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Create Account
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 🆕 Modal для деталей акаунту -->
+<div id="accountDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 modal-backdrop">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+        <div class="flex items-center justify-between p-6 border-b border-gray-200">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-blue-600/10 flex items-center justify-center text-blue-600">
+                    <i data-lucide="credit-card" class="h-5 w-5"></i>
+                </div>
+                <h3 class="text-lg font-semibold">Checking Account</h3>
+            </div>
+            <button onclick="closeAccountDetailsModal()" class="text-gray-400 hover:text-gray-600">
+                <i data-lucide="x" class="h-5 w-5"></i>
             </button>
-            <button onclick="createAccount()" class="flex-1 inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700 transition-all">
-                Create Account
+        </div>
+
+        <div class="p-6 space-y-6">
+            <!-- Account Number -->
+            <div>
+                <div class="flex items-center justify-between mb-1">
+                    <p class="text-xs text-gray-500 font-medium">Account Number</p>
+                    <span id="modal-status" class="inline-flex items-center rounded-full bg-blue-600 px-2.5 py-0.5 text-xs font-semibold text-white">
+                        Active
+                    </span>
+                </div>
+                <p id="modal-account-number" class="text-sm font-mono text-gray-900">452178341234123</p>
+            </div>
+
+            <!-- Balance -->
+            <div>
+                <p class="text-xs text-gray-500 font-medium mb-1">Balance</p>
+                <p id="modal-balance" class="text-3xl font-bold text-gray-900">$12,450.00</p>
+            </div>
+
+            <!-- Recent Activity -->
+            <div>
+                <p class="text-sm font-semibold text-gray-900 mb-3">RECENT ACTIVITY</p>
+                <div id="modal-activity" class="space-y-3">
+                    <!-- Transactions will be loaded here -->
+                    <div class="flex justify-center py-8">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-6 border-t border-gray-200">
+            <button onclick="closeAccountDetailsModal()" class="w-full inline-flex items-center justify-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 transition-all">
+                Close
             </button>
         </div>
     </div>
 </div>
 
+<script src="/js/main.js"></script>
 <script>
+    // Initialize Lucide icons
     lucide.createIcons();
 
-    let selectedAccountType = 'Checking';
-    let currentFilter = 'all';
-
-    // Filter Accounts
+    // Filter accounts
     function filterAccounts(status) {
-        currentFilter = status;
         const cards = document.querySelectorAll('.account-card');
         const emptyState = document.getElementById('empty-state');
-        let visibleCount = 0;
+        const filterButtons = ['filter-all', 'filter-active', 'filter-blocked'];
 
         // Update button styles
-        document.querySelectorAll('[id^="filter-"]').forEach(btn => {
-            btn.classList.remove('bg-gray-900', 'text-white');
-            btn.classList.add('border', 'border-gray-300', 'bg-white', 'text-gray-700');
+        filterButtons.forEach(btnId => {
+            const btn = document.getElementById(btnId);
+            if (btnId === 'filter-' + status) {
+                btn.classList.remove('border', 'border-gray-300', 'bg-white', 'text-gray-700');
+                btn.classList.add('bg-gray-900', 'text-white');
+            } else {
+                btn.classList.remove('bg-gray-900', 'text-white');
+                btn.classList.add('border', 'border-gray-300', 'bg-white', 'text-gray-700');
+            }
         });
-        document.getElementById('filter-' + status).classList.remove('border', 'border-gray-300', 'bg-white', 'text-gray-700');
-        document.getElementById('filter-' + status).classList.add('bg-gray-900', 'text-white');
 
+        let visibleCount = 0;
         cards.forEach(card => {
-            const cardStatus = card.dataset.status;
+            const cardStatus = card.getAttribute('data-status');
             if (status === 'all' || cardStatus === status) {
                 card.style.display = 'block';
                 visibleCount++;
@@ -344,43 +408,76 @@
             }
         });
 
-        // Show empty state if no cards visible
-        if (visibleCount === 0) {
-            emptyState.classList.remove('hidden');
-        } else {
-            emptyState.classList.add('hidden');
+        emptyState.classList.toggle('hidden', visibleCount > 0);
+        lucide.createIcons();
+    }
+
+    // Toggle balance visibility
+    function toggleBalance(accountId) {
+        const hidden = document.querySelector('.balance-amount[data-account-id="' + accountId + '"]');
+        const revealed = document.querySelector('.balance-revealed[data-account-id="' + accountId + '"]');
+        const iconHidden = document.querySelector('.balance-icon-hidden[data-account-id="' + accountId + '"]');
+        const iconRevealed = document.querySelector('.balance-icon-revealed[data-account-id="' + accountId + '"]');
+
+        hidden.classList.toggle('hidden');
+        revealed.classList.toggle('hidden');
+        iconHidden.classList.toggle('hidden');
+        iconRevealed.classList.toggle('hidden');
+    }
+
+    // Copy account number
+    function copyAccountNumber(accountNumber, button) {
+        navigator.clipboard.writeText(accountNumber).then(() => {
+            const icon = button.querySelector('i');
+            icon.setAttribute('data-lucide', 'check');
+            lucide.createIcons();
+
+            setTimeout(() => {
+                icon.setAttribute('data-lucide', 'copy');
+                lucide.createIcons();
+            }, 2000);
+        });
+    }
+
+    // Block account
+    function blockAccount(accountId) {
+        if (confirm('Are you sure you want to block this account?')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/api/accounts/' + accountId + '/block';
+            document.body.appendChild(form);
+            form.submit();
         }
     }
 
-    // Toggle Balance Visibility
-    function toggleBalance(accountId) {
-        const hiddenAmount = document.querySelector('.balance-amount[data-account-id="' + accountId + '"]');
-        const revealedAmount = document.querySelector('.balance-revealed[data-account-id="' + accountId + '"]');
-        const hiddenIcon = document.querySelector('.balance-icon-hidden[data-account-id="' + accountId + '"]');
-        const revealedIcon = document.querySelector('.balance-icon-revealed[data-account-id="' + accountId + '"]');
-
-        hiddenAmount.classList.toggle('hidden');
-        revealedAmount.classList.toggle('hidden');
-        hiddenIcon.classList.toggle('hidden');
-        revealedIcon.classList.toggle('hidden');
-
-        lucide.createIcons();
+    // Unblock account
+    function unblockAccount(accountId) {
+        if (confirm('Are you sure you want to unblock this account?')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/api/accounts/' + accountId + '/unblock';
+            document.body.appendChild(form);
+            form.submit();
+        }
     }
 
-    // Copy Account Number
-    function copyAccountNumber(accountNumber, button) {
-        navigator.clipboard.writeText(accountNumber);
-        const icon = button.querySelector('i');
-        icon.setAttribute('data-lucide', 'check');
-        lucide.createIcons();
+    // Delete account
+    function deleteAccount(accountId, balance) {
+        if (parseFloat(balance) > 0) {
+            alert('Cannot delete account with positive balance. Please withdraw all funds first.');
+            return;
+        }
 
-        setTimeout(() => {
-            icon.setAttribute('data-lucide', 'copy');
-            lucide.createIcons();
-        }, 2000);
+        if (confirm('Are you sure you want to delete this account? This action cannot be undone.')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/api/accounts/' + accountId + '/delete';
+            document.body.appendChild(form);
+            form.submit();
+        }
     }
 
-    // Modal Functions
+    // Add Account Modal functions
     function openAddAccountModal() {
         document.getElementById('addAccountModal').classList.remove('hidden');
         document.getElementById('addAccountModal').classList.add('flex');
@@ -389,77 +486,98 @@
     function closeAddAccountModal() {
         document.getElementById('addAccountModal').classList.add('hidden');
         document.getElementById('addAccountModal').classList.remove('flex');
+        document.getElementById('accountTypeInput').value = '';
+        document.getElementById('submitAccountBtn').disabled = true;
+        document.querySelectorAll('.account-type-btn').forEach(btn => {
+            btn.classList.remove('border-blue-600', 'bg-blue-50');
+            btn.classList.add('border-gray-200');
+        });
     }
 
     function selectAccountType(type) {
-        selectedAccountType = type;
-        document.querySelectorAll('.account-type-btn').forEach(btn => {
-            const btnType = btn.dataset.type;
-            const icon = btn.querySelector('div');
+        document.getElementById('accountTypeInput').value = type;
+        document.getElementById('submitAccountBtn').disabled = false;
 
-            if (btnType === type) {
+        document.querySelectorAll('.account-type-btn').forEach(btn => {
+            if (btn.getAttribute('data-type') === type) {
                 btn.classList.remove('border-gray-200');
                 btn.classList.add('border-blue-600', 'bg-blue-50');
-                icon.classList.remove('bg-gray-100', 'text-gray-600');
-                icon.classList.add('bg-blue-600', 'text-white');
             } else {
-                btn.classList.add('border-gray-200');
                 btn.classList.remove('border-blue-600', 'bg-blue-50');
-                icon.classList.add('bg-gray-100', 'text-gray-600');
-                icon.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('border-gray-200');
             }
         });
     }
 
-    function createAccount() {
-        // Створюємо форму та відправляємо POST запит
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/api/accounts/create';
-
-        const typeInput = document.createElement('input');
-        typeInput.type = 'hidden';
-        typeInput.name = 'accountType';
-        typeInput.value = selectedAccountType;
-
-        form.appendChild(typeInput);
-        document.body.appendChild(form);
-        form.submit();
+    // Helper function to format date
+    function formatDate(dateString) {
+        const options = { year: 'numeric', month: 'short', day: 'numeric' };
+        return new Date(dateString).toLocaleDateString('en-US', options);
     }
 
-    // Account Actions
-    function blockAccount(accountId) {
-        if (confirm('Are you sure you want to block this account?')) {
-            window.location.href = '/api/accounts/' + accountId + '/block';
-        }
-    }
-
-    function unblockAccount(accountId) {
-        if (confirm('Are you sure you want to unblock this account?')) {
-            window.location.href = '/api/accounts/' + accountId + '/unblock';
-        }
-    }
-
-    function deleteAccount(accountId, balance) {
-        if (parseFloat(balance) > 0) {
-            alert('Cannot delete account with remaining funds. Please transfer funds first.');
-            return;
-        }
-        if (confirm('Are you sure you want to permanently delete this account?')) {
-            window.location.href = '/api/accounts/' + accountId + '/delete';
-        }
-    }
-
+    // 🆕 Show account details modal
     function showAccountDetails(accountId) {
-        // This would open a detail modal - implement as needed
-        console.log('Show details for account:', accountId);
+        const modal = document.getElementById('accountDetailsModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        // Show loading spinner
+        document.getElementById('modal-activity').innerHTML = 
+            '<div class="flex justify-center py-8">' +
+                '<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>' +
+            '</div>';
+
+        // Fetch account details
+        fetch('/api/accounts/' + accountId + '/details')
+            .then(response => response.json())
+            .then(data => {
+                // Update modal content
+                document.getElementById('modal-account-number').textContent = data.accountNumber;
+                document.getElementById('modal-balance').textContent = '$' + parseFloat(data.balance).toFixed(2);
+                document.getElementById('modal-status').textContent = data.status;
+                document.getElementById('modal-status').className = data.status === 'ACTIVE' 
+                    ? 'inline-flex items-center rounded-full bg-blue-600 px-2.5 py-0.5 text-xs font-semibold text-white'
+                    : 'inline-flex items-center rounded-full bg-red-600 px-2.5 py-0.5 text-xs font-semibold text-white';
+
+                // Render recent activity
+                const activityHtml = data.recentActivity && data.recentActivity.length > 0
+                    ? data.recentActivity.map(payment => {
+                        const isIncoming = payment.paymentType === 'DEPOSIT';
+                        const iconName = isIncoming ? 'arrow-down-left' : 'arrow-up-right';
+                        const iconColor = isIncoming ? 'text-green-600' : 'text-red-600';
+                        const iconBg = isIncoming ? 'bg-green-50' : 'bg-red-50';
+                        const amountColor = isIncoming ? 'text-green-600' : 'text-red-600';
+                        const amountSign = isIncoming ? '+' : '';
+
+                        return '<div class="flex items-center justify-between">' +
+                                '<div class="flex items-center gap-3">' +
+                                    '<div class="w-8 h-8 rounded-lg ' + iconBg + ' flex items-center justify-center ' + iconColor + '">' +
+                                        '<i data-lucide="' + iconName + '" class="h-4 w-4"></i>' +
+                                    '</div>' +
+                                    '<div>' +
+                                        '<p class="text-sm font-medium text-gray-900">' + (payment.description || payment.paymentType) + '</p>' +
+                                        '<p class="text-xs text-gray-500">' + formatDate(payment.createdAt) + '</p>' +
+                                    '</div>' +
+                                '</div>' +
+                                '<p class="text-sm font-semibold ' + amountColor + '">' + amountSign + '$' + parseFloat(payment.amount).toFixed(2) + '</p>' +
+                            '</div>';
+                    }).join('')
+                    : '<p class="text-sm text-gray-500 text-center py-4">No recent transactions</p>';
+
+                document.getElementById('modal-activity').innerHTML = activityHtml;
+                lucide.createIcons();
+            })
+            .catch(error => {
+                console.error('Error fetching account details:', error);
+                document.getElementById('modal-activity').innerHTML = '<p class="text-sm text-red-500 text-center py-4">Error loading transactions</p>';
+            });
     }
 
-    // Initialize
-    document.addEventListener('DOMContentLoaded', function() {
-        lucide.createIcons();
-        selectAccountType('Checking'); // Default selection
-    });
+    // 🆕 Close account details modal
+    function closeAccountDetailsModal() {
+        document.getElementById('accountDetailsModal').classList.add('hidden');
+        document.getElementById('accountDetailsModal').classList.remove('flex');
+    }
 </script>
 
 </body>

@@ -376,3 +376,97 @@ function initializeCharts() {
 document.addEventListener('DOMContentLoaded', () => {
   initializeCharts();
 });
+
+// 🆕 Account Details Modal Functions
+async function showAccountDetails(accountId) {
+  const modal = document.getElementById('accountDetailsModal');
+  if (!modal) return;
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+
+  // Show loading spinner
+  const activityContainer = document.getElementById('modal-activity');
+  if (activityContainer) {
+    activityContainer.innerHTML = `
+      <div class="flex justify-center py-8">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    `;
+  }
+
+  try {
+    // Fetch account details
+    const response = await fetch(`/api/accounts/${accountId}/details`);
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch account details');
+    }
+
+    const data = await response.json();
+
+    // Update modal content
+    const accountNumberEl = document.getElementById('modal-account-number');
+    const balanceEl = document.getElementById('modal-balance');
+    const statusEl = document.getElementById('modal-status');
+
+    if (accountNumberEl) accountNumberEl.textContent = data.accountNumber;
+    if (balanceEl) balanceEl.textContent = `$${parseFloat(data.balance).toFixed(2)}`;
+
+    if (statusEl) {
+      statusEl.textContent = data.status;
+      statusEl.className = data.status === 'ACTIVE'
+          ? 'inline-flex items-center rounded-full bg-blue-600 px-2.5 py-0.5 text-xs font-semibold text-white'
+          : 'inline-flex items-center rounded-full bg-red-600 px-2.5 py-0.5 text-xs font-semibold text-white';
+    }
+
+    // Render recent activity
+    if (activityContainer) {
+      const activityHtml = data.recentActivity && data.recentActivity.length > 0
+          ? data.recentActivity.map(payment => {
+            const isIncoming = payment.paymentType === 'DEPOSIT';
+            const iconName = isIncoming ? 'arrow-down-left' : 'arrow-up-right';
+            const iconColor = isIncoming ? 'text-green-600' : 'text-red-600';
+            const iconBg = isIncoming ? 'bg-green-50' : 'bg-red-50';
+            const amountColor = isIncoming ? 'text-green-600' : 'text-red-600';
+            const amountSign = isIncoming ? '+' : '';
+
+            return `
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-lg ${iconBg} flex items-center justify-center ${iconColor}">
+                    <i data-lucide="${iconName}" class="h-4 w-4"></i>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-gray-900">${payment.description || payment.paymentType}</p>
+                    <p class="text-xs text-gray-500">${formatDate(payment.createdAt)}</p>
+                  </div>
+                </div>
+                <p class="text-sm font-semibold ${amountColor}">${amountSign}$${parseFloat(payment.amount).toFixed(2)}</p>
+              </div>
+            `;
+          }).join('')
+          : '<p class="text-sm text-gray-500 text-center py-4">No recent transactions</p>';
+
+      activityContainer.innerHTML = activityHtml;
+
+      // Reinitialize Lucide icons if available
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching account details:', error);
+    if (activityContainer) {
+      activityContainer.innerHTML = '<p class="text-sm text-red-500 text-center py-4">Error loading transactions</p>';
+    }
+  }
+}
+
+function closeAccountDetailsModal() {
+  const modal = document.getElementById('accountDetailsModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}

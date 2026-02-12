@@ -11,14 +11,18 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ua.com.kisit.course2026np.entity.Account;
 import ua.com.kisit.course2026np.entity.AccountStatus;
 import ua.com.kisit.course2026np.entity.CreditCard;
+import ua.com.kisit.course2026np.entity.Payment;
 import ua.com.kisit.course2026np.entity.User;
 import ua.com.kisit.course2026np.entity.UserRole;
 import ua.com.kisit.course2026np.repository.CreditCardRepository;
 import ua.com.kisit.course2026np.repository.UserRepository;
 import ua.com.kisit.course2026np.service.AccountService;
+import ua.com.kisit.course2026np.service.PaymentService;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 /**
@@ -30,6 +34,7 @@ import java.util.Random;
 public class AccountController {
 
     private final AccountService accountService;
+    private final PaymentService paymentService;
     private final CreditCardRepository creditCardRepository;
     private final UserRepository userRepository;
 
@@ -81,6 +86,34 @@ public class AccountController {
         }
 
         return "redirect:/dashboard/accounts";
+    }
+
+    /**
+     * 🆕 GET - Отримати деталі акаунту з останніми транзакціями
+     * GET /api/accounts/{id}/details
+     */
+    @GetMapping("/{id}/details")
+    @ResponseBody
+    public ResponseEntity<AccountDetailsResponse> getAccountDetails(@PathVariable Long id) {
+        try {
+            // Знаходимо акаунт
+            Account account = accountService.getAccountById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Рахунок не знайдено"));
+
+            // Отримуємо останні 5 транзакцій
+            List<Payment> recentPayments = paymentService.getRecentPaymentsByAccount(account, 5);
+
+            // Формуємо відповідь
+            AccountDetailsResponse response = new AccountDetailsResponse();
+            response.setAccountNumber(account.getAccountNumber());
+            response.setStatus(account.getStatus().name());
+            response.setBalance(account.getBalance());
+            response.setRecentActivity(recentPayments);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     /**
@@ -289,5 +322,17 @@ public class AccountController {
     @Getter
     public static class WithdrawRequest {
         private BigDecimal amount;
+    }
+
+    /**
+     * 🆕 DTO для деталей акаунту з транзакціями
+     */
+    @Setter
+    @Getter
+    public static class AccountDetailsResponse {
+        private String accountNumber;
+        private String status;
+        private BigDecimal balance;
+        private List<Payment> recentActivity;
     }
 }

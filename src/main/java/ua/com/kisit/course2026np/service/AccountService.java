@@ -161,4 +161,137 @@ public class AccountService {
 
         return account.getBalance();
     }
+
+    // ============= 🆕 ДОДАТКОВІ МЕТОДИ =============
+
+    /**
+     * 🆕 Підрахунок загальної кількості рахунків
+     *
+     * @return загальна кількість рахунків
+     */
+    @Transactional(readOnly = true)
+    public long countAccounts() {
+        long count = accountRepository.count();
+        log.debug("Загальна кількість рахунків: {}", count);
+        return count;
+    }
+
+    /**
+     * 🆕 Підрахунок активних рахунків
+     *
+     * @return кількість активних рахунків
+     */
+    @Transactional(readOnly = true)
+    public long countActiveAccounts() {
+        long count = accountRepository.findByStatus(AccountStatus.ACTIVE).size();
+        log.debug("Кількість активних рахунків: {}", count);
+        return count;
+    }
+
+    /**
+     * 🆕 Підрахунок заблокованих рахунків
+     *
+     * @return кількість заблокованих рахунків
+     */
+    @Transactional(readOnly = true)
+    public long countBlockedAccounts() {
+        long count = accountRepository.findByStatus(AccountStatus.BLOCKED).size();
+        log.debug("Кількість заблокованих рахунків: {}", count);
+        return count;
+    }
+
+    /**
+     * 🆕 Отримати активні рахунки
+     *
+     * @return список активних рахунків
+     */
+    @Transactional(readOnly = true)
+    public List<Account> getActiveAccounts() {
+        log.debug("Отримання активних рахунків");
+        return accountRepository.findByStatus(AccountStatus.ACTIVE);
+    }
+
+    /**
+     * 🆕 Отримати заблоковані рахунки
+     *
+     * @return список заблокованих рахунків
+     */
+    @Transactional(readOnly = true)
+    public List<Account> getBlockedAccounts() {
+        log.debug("Отримання заблокованих рахунків");
+        return accountRepository.findByStatus(AccountStatus.BLOCKED);
+    }
+
+    /**
+     * 🆕 Перевірити чи існує рахунок з номером
+     *
+     * @param accountNumber номер рахунку
+     * @return true якщо існує, false якщо ні
+     */
+    @Transactional(readOnly = true)
+    public boolean existsByAccountNumber(String accountNumber) {
+        boolean exists = accountRepository.findByAccountNumber(accountNumber).isPresent();
+        log.debug("Рахунок з номером {} {}", accountNumber, exists ? "існує" : "не існує");
+        return exists;
+    }
+
+    /**
+     * 🆕 Отримати загальний баланс всіх рахунків
+     *
+     * @return сума балансів всіх рахунків
+     */
+    @Transactional(readOnly = true)
+    public BigDecimal getTotalBalance() {
+        BigDecimal total = accountRepository.findAll().stream()
+                .map(Account::getBalance)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        log.debug("Загальний баланс всіх рахунків: {}", total);
+        return total;
+    }
+
+    /**
+     * 🆕 Отримати максимальний баланс серед усіх рахунків
+     *
+     * @return максимальний баланс або 0 якщо рахунків немає
+     */
+    @Transactional(readOnly = true)
+    public BigDecimal getMaxBalance() {
+        return accountRepository.findAll().stream()
+                .map(Account::getBalance)
+                .max(BigDecimal::compareTo)
+                .orElse(BigDecimal.ZERO);
+    }
+
+    /**
+     * 🆕 Перевірити чи активний рахунок
+     *
+     * @param id ідентифікатор рахунку
+     * @return true якщо активний, false якщо заблокований
+     */
+    @Transactional(readOnly = true)
+    public boolean isAccountActive(Long id) {
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Рахунок з ID " + id + " не знайдено"
+                ));
+
+        return account.getStatus() == AccountStatus.ACTIVE;
+    }
+
+    /**
+     * 🆕 Перевірити чи заблокований рахунок
+     *
+     * @param id ідентифікатор рахунку
+     * @return true якщо заблокований, false якщо активний
+     */
+    @Transactional(readOnly = true)
+    public boolean isAccountBlocked(Long id) {
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Рахунок з ID " + id + " не знайдено"
+                ));
+
+        return account.getStatus() == AccountStatus.BLOCKED;
+    }
 }

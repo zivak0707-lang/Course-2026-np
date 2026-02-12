@@ -2,6 +2,8 @@ package ua.com.kisit.course2026np.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ua.com.kisit.course2026np.entity.Account;
@@ -57,7 +59,7 @@ public class PaymentService {
                         new IllegalArgumentException("Рахунок з ID " + accountId + " не знайдено")
                 );
 
-        // 🔥 2. ПРИВ’ЯЗАТИ ПЛАТІЖ ДО РАХУНКУ
+        // 🔥 2. ПРИВ'ЯЗАТИ ПЛАТІЖ ДО РАХУНКУ
         payment.setAccount(account);
 
         try {
@@ -150,6 +152,24 @@ public class PaymentService {
     public List<Payment> getPaymentsByAccountOrdered(Account account) {
         log.debug("Пошук платежів для рахунку {} (відсортовані)", account.getId());
         return paymentRepository.findByAccountOrderByCreatedAtDesc(account);
+    }
+
+    /**
+     * 🆕 READ - Отримати останні N транзакцій для акаунту
+     *
+     * @param account рахунок
+     * @param limit кількість транзакцій
+     * @return список останніх транзакцій
+     */
+    @Transactional(readOnly = true)
+    public List<Payment> getRecentPaymentsByAccount(Account account, int limit) {
+        log.debug("Отримання останніх {} платежів для рахунку {}", limit, account.getId());
+        List<Payment> allPayments = paymentRepository.findByAccountOrderByCreatedAtDesc(account);
+
+        // Обмежуємо кількість результатів
+        return allPayments.stream()
+                .limit(limit)
+                .toList();
     }
 
     /**
