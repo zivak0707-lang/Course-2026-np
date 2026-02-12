@@ -25,6 +25,11 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // === ДОДАНО НОВЕ ПОЛЕ ===
+    @Column(name = "account_name", nullable = false)
+    private String accountName;
+    // ========================
+
     @Column(name = "account_number", nullable = false, unique = true, length = 20)
     private String accountNumber;
 

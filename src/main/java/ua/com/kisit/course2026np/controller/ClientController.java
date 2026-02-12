@@ -68,11 +68,45 @@ public class ClientController {
         return "client/dashboard";
     }
 
-    // --- 2. ACCOUNTS ---
+    // --- 2. ACCOUNTS (НОВИЙ ЕНДПОІНТ З ПОВНОЮ СТАТИСТИКОЮ) ---
     @GetMapping("/accounts")
     public String accounts(Model model) {
         User user = getDemoUser();
-        addCommonData(model, user);
+
+        // Отримуємо всі картки користувача
+        List<CreditCard> userCards = creditCardRepository.findByUser(user);
+
+        // Отримуємо всі рахунки користувача через картки
+        List<Account> accounts = getUserAccounts(userCards);
+
+        // Розраховуємо статистику
+        BigDecimal totalBalance = accounts.stream()
+                .filter(Account::isActive)
+                .map(Account::getBalance)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        long activeCount = accounts.stream()
+                .filter(Account::isActive)
+                .count();
+
+        long blockedCount = accounts.stream()
+                .filter(a -> a.getStatus() == AccountStatus.BLOCKED)
+                .count();
+
+        // Знаходимо максимальний баланс для прогрес-барів
+        BigDecimal maxBalance = accounts.stream()
+                .map(Account::getBalance)
+                .max(BigDecimal::compareTo)
+                .orElse(BigDecimal.ONE);
+
+        // Додаємо дані в модель
+        model.addAttribute("user", user);
+        model.addAttribute("accounts", accounts);
+        model.addAttribute("totalBalance", formatCurrency(totalBalance));
+        model.addAttribute("activeCount", activeCount);
+        model.addAttribute("blockedCount", blockedCount);
+        model.addAttribute("maxBalance", maxBalance);
+
         return "client/accounts";
     }
 

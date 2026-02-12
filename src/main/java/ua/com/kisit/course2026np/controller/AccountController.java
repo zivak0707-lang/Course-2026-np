@@ -5,35 +5,193 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ua.com.kisit.course2026np.entity.Account;
 import ua.com.kisit.course2026np.entity.AccountStatus;
+import ua.com.kisit.course2026np.entity.CreditCard;
+import ua.com.kisit.course2026np.entity.User;
+import ua.com.kisit.course2026np.entity.UserRole;
+import ua.com.kisit.course2026np.repository.CreditCardRepository;
+import ua.com.kisit.course2026np.repository.UserRepository;
 import ua.com.kisit.course2026np.service.AccountService;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Random;
 
 /**
  * REST контролер для роботи з рахунками
  */
-@RestController
+@Controller
 @RequestMapping("/api/accounts")
 @RequiredArgsConstructor
 public class AccountController {
 
     private final AccountService accountService;
+    private final CreditCardRepository creditCardRepository;
+    private final UserRepository userRepository;
 
     /**
-     * CREATE - Створити новий рахунок
-     * POST <a href="http://localhost:8080/api/accounts">...</a>
-     * Body: {
-     *   "accountNumber": "12345678901234567890",
-     *   "balance": 1000.00,
-     *   "status": "ACTIVE",
-     *   "creditCard": {"id": 1}
-     * }
+     * CREATE - Створити новий рахунок через веб-інтерфейс
+     * POST /api/accounts/create
+     */
+    @PostMapping("/create")
+    public String createAccountWeb(
+            @RequestParam String accountType,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            User user = getDemoUser();
+
+            // Знаходимо першу активну картку користувача
+            List<CreditCard> userCards = creditCardRepository.findByUser(user);
+            if (userCards.isEmpty()) {
+                throw new IllegalStateException("У користувача немає карток. Спочатку додайте картку.");
+            }
+
+            CreditCard card = userCards.get(0); // Беремо першу картку
+
+            // Генеруємо номер рахунку залежно від типу
+            String accountNumber = generateAccountNumber(accountType);
+
+            // Створюємо рахунок
+            Account account = Account.builder()
+                    .accountNumber(accountNumber)
+                    .accountName(accountType + " Account") // === ДОДАНО: Заповнюємо обов'язкове поле ===
+                    .balance(BigDecimal.ZERO)
+                    .status(AccountStatus.ACTIVE)
+                    .creditCard(card)
+                    .build();
+
+            accountService.createAccount(account);
+
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Рахунок типу " + accountType + " успішно створено!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Помилка при створенні рахунку: " + e.getMessage());
+        }
+
+        return "redirect:/dashboard/accounts";
+    }
+
+    /**
+     * UPDATE - Заблокувати рахунок
+     * POST /api/accounts/{id}/block
+     */
+    @PostMapping("/{id}/block")
+    public String blockAccountWeb(
+            @PathVariable Long id,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            accountService.blockAccount(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Рахунок заблоковано!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Помилка при блокуванні: " + e.getMessage());
+        }
+        return "redirect:/dashboard/accounts";
+    }
+
+    /**
+     * UPDATE - Розблокувати рахунок
+     * POST /api/accounts/{id}/unblock
+     */
+    @PostMapping("/{id}/unblock")
+    public String unblockAccountWeb(
+            @PathVariable Long id,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            accountService.unblockAccount(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Рахунок розблоковано!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Помилка при розблокуванні: " + e.getMessage());
+        }
+        return "redirect:/dashboard/accounts";
+    }
+
+    /**
+     * DELETE - Видалити рахунок
+     * POST /api/accounts/{id}/delete
+     */
+    @PostMapping("/{id}/delete")
+    public String deleteAccountWeb(
+            @PathVariable Long id,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            // Перевіряємо чи баланс = 0
+            Account account = accountService.getAccountById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Рахунок не знайдено"));
+
+            if (account.getBalance().compareTo(BigDecimal.ZERO) > 0) {
+                throw new IllegalStateException("Неможливо видалити рахунок з залишком коштів!");
+            }
+
+            accountService.deleteAccount(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Рахунок видалено!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Помилка при видаленні: " + e.getMessage());
+        }
+        return "redirect:/dashboard/accounts";
+    }
+
+    // ============= HELPER METHODS =============
+
+    /**
+     * Генерація номера рахунку на основі типу
+     */
+    private String generateAccountNumber(String accountType) {
+        Random random = new Random();
+        String prefix;
+
+        switch (accountType.toLowerCase()) {
+            case "checking":
+                prefix = "4521"; // Checking accounts
+                break;
+            case "savings":
+                prefix = "5432"; // Savings accounts
+                break;
+            case "business":
+                prefix = "2222"; // Business accounts
+                break;
+            default:
+                prefix = "4521";
+        }
+
+        // Генеруємо решту 16 цифр
+        StringBuilder accountNumber = new StringBuilder(prefix);
+        for (int i = 0; i < 16; i++) {
+            accountNumber.append(random.nextInt(10));
+        }
+
+        return accountNumber.toString();
+    }
+
+    /**
+     * Отримати демо-користувача
+     */
+    private User getDemoUser() {
+        return userRepository.findAll().stream()
+                .filter(u -> u.getRole() == UserRole.CLIENT)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("User not found"));
+    }
+
+    // ============= REST API ENDPOINTS (для майбутнього використання) =============
+
+    /**
+     * CREATE - Створити новий рахунок (REST API)
+     * POST /api/accounts
      */
     @PostMapping
+    @ResponseBody
     public ResponseEntity<Account> createAccount(@RequestBody Account account) {
         Account created = accountService.createAccount(account);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
@@ -41,9 +199,10 @@ public class AccountController {
 
     /**
      * READ - Отримати всі рахунки
-     * GET <a href="http://localhost:8080/api/accounts">...</a>
+     * GET /api/accounts
      */
     @GetMapping
+    @ResponseBody
     public ResponseEntity<List<Account>> getAllAccounts() {
         List<Account> accounts = accountService.getAllAccounts();
         return ResponseEntity.ok(accounts);
@@ -51,9 +210,10 @@ public class AccountController {
 
     /**
      * READ - Отримати рахунок за ID
-     * GET <a href="http://localhost:8080/api/accounts/1">...</a>
+     * GET /api/accounts/{id}
      */
     @GetMapping("/{id}")
+    @ResponseBody
     public ResponseEntity<Account> getAccountById(@PathVariable Long id) {
         return accountService.getAccountById(id)
                 .map(ResponseEntity::ok)
@@ -62,9 +222,10 @@ public class AccountController {
 
     /**
      * READ - Отримати рахунок за номером
-     * GET <a href="http://localhost:8080/api/accounts/number/12345678901234567890">...</a>
+     * GET /api/accounts/number/{accountNumber}
      */
     @GetMapping("/number/{accountNumber}")
+    @ResponseBody
     public ResponseEntity<Account> getAccountByNumber(@PathVariable String accountNumber) {
         return accountService.getAccountByNumber(accountNumber)
                 .map(ResponseEntity::ok)
@@ -72,31 +233,11 @@ public class AccountController {
     }
 
     /**
-     * READ - Отримати рахунок за ID картки
-     * GET <a href="http://localhost:8080/api/accounts/card/1">...</a>
-     */
-    @GetMapping("/card/{cardId}")
-    public ResponseEntity<Account> getAccountByCardId(@PathVariable Long cardId) {
-        return accountService.getAccountByCardId(cardId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    /**
-     * READ - Отримати рахунки за статусом
-     * GET <a href="http://localhost:8080/api/accounts/status/ACTIVE">...</a>
-     */
-    @GetMapping("/status/{status}")
-    public ResponseEntity<List<Account>> getAccountsByStatus(@PathVariable AccountStatus status) {
-        List<Account> accounts = accountService.getAccountsByStatus(status);
-        return ResponseEntity.ok(accounts);
-    }
-
-    /**
      * READ - Отримати баланс рахунку
-     * GET <a href="http://localhost:8080/api/accounts/1/balance">...</a>
+     * GET /api/accounts/{id}/balance
      */
     @GetMapping("/{id}/balance")
+    @ResponseBody
     public ResponseEntity<BigDecimal> getBalance(@PathVariable Long id) {
         BigDecimal balance = accountService.getBalance(id);
         return ResponseEntity.ok(balance);
@@ -104,10 +245,10 @@ public class AccountController {
 
     /**
      * UPDATE - Поповнити рахунок
-     * POST <a href="http://localhost:8080/api/accounts/1/deposit">...</a>
-     * Body: {"amount": 500.00}
+     * POST /api/accounts/{id}/deposit
      */
     @PostMapping("/{id}/deposit")
+    @ResponseBody
     public ResponseEntity<Account> deposit(
             @PathVariable Long id,
             @RequestBody DepositRequest request
@@ -118,10 +259,10 @@ public class AccountController {
 
     /**
      * UPDATE - Зняти кошти з рахунку
-     * POST <a href="http://localhost:8080/api/accounts/1/withdraw">...</a>
-     * Body: {"amount": 200.00}
+     * POST /api/accounts/{id}/withdraw
      */
     @PostMapping("/{id}/withdraw")
+    @ResponseBody
     public ResponseEntity<Account> withdraw(
             @PathVariable Long id,
             @RequestBody WithdrawRequest request
@@ -130,49 +271,17 @@ public class AccountController {
         return ResponseEntity.ok(updated);
     }
 
-    /**
-     * UPDATE - Заблокувати рахунок
-     * POST <a href="http://localhost:8080/api/accounts/1/block">...</a>
-     */
-    @PostMapping("/{id}/block")
-    public ResponseEntity<Void> blockAccount(@PathVariable Long id) {
-        accountService.blockAccount(id);
-        return ResponseEntity.ok().build();
-    }
-
-    /**
-     * UPDATE - Розблокувати рахунок
-     * POST <a href="http://localhost:8080/api/accounts/1/unblock">...</a>
-     */
-    @PostMapping("/{id}/unblock")
-    public ResponseEntity<Void> unblockAccount(@PathVariable Long id) {
-        accountService.unblockAccount(id);
-        return ResponseEntity.ok().build();
-    }
-
-    /**
-     * DELETE - Видалити рахунок
-     * DELETE <a href="http://localhost:8080/api/accounts/1">...</a>
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAccount(@PathVariable Long id) {
-        accountService.deleteAccount(id);
-        return ResponseEntity.noContent().build();
-    }
-
     // ============= DTO CLASSES =============
 
     @Setter
     @Getter
     public static class DepositRequest {
         private BigDecimal amount;
-
     }
 
     @Setter
     @Getter
     public static class WithdrawRequest {
         private BigDecimal amount;
-
     }
 }
