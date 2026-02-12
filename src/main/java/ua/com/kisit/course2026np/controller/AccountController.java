@@ -51,7 +51,13 @@ public class AccountController {
                 throw new IllegalStateException("У користувача немає карток. Спочатку додайте картку.");
             }
 
-            CreditCard card = userCards.get(0); // Беремо першу картку
+            CreditCard card = userCards.stream()
+                    .filter(c -> accountService.getAccountByCardId(c.getId()).isEmpty())
+                    .findFirst()
+                    .orElseThrow(() ->
+                            new IllegalStateException("Усі картки вже мають рахунки.")
+                    );
+            // Беремо першу картку
 
             // Генеруємо номер рахунку залежно від типу
             String accountNumber = generateAccountNumber(accountType);
