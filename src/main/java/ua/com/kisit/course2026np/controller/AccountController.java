@@ -20,9 +20,7 @@ import ua.com.kisit.course2026np.service.AccountService;
 import ua.com.kisit.course2026np.service.PaymentService;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 /**
@@ -62,7 +60,6 @@ public class AccountController {
                     .orElseThrow(() ->
                             new IllegalStateException("Усі картки вже мають рахунки.")
                     );
-            // Беремо першу картку
 
             // Генеруємо номер рахунку залежно від типу
             String accountNumber = generateAccountNumber(accountType);
@@ -70,7 +67,7 @@ public class AccountController {
             // Створюємо рахунок
             Account account = Account.builder()
                     .accountNumber(accountNumber)
-                    .accountName(accountType + " Account") // === ДОДАНО: Заповнюємо обов'язкове поле ===
+                    .accountName(accountType + " Account")
                     .balance(BigDecimal.ZERO)
                     .status(AccountStatus.ACTIVE)
                     .creditCard(card)
@@ -89,7 +86,7 @@ public class AccountController {
     }
 
     /**
-     * 🆕 GET - Отримати деталі акаунту з останніми транзакціями
+     * GET - Отримати деталі акаунту з останніми транзакціями
      * GET /api/accounts/{id}/details
      */
     @GetMapping("/{id}/details")
@@ -188,21 +185,14 @@ public class AccountController {
      */
     private String generateAccountNumber(String accountType) {
         Random random = new Random();
-        String prefix;
 
-        switch (accountType.toLowerCase()) {
-            case "checking":
-                prefix = "4521"; // Checking accounts
-                break;
-            case "savings":
-                prefix = "5432"; // Savings accounts
-                break;
-            case "business":
-                prefix = "2222"; // Business accounts
-                break;
-            default:
-                prefix = "4521";
-        }
+        // Enhanced switch expression (Java 14+)
+        String prefix = switch (accountType.toLowerCase()) {
+            case "checking" -> "4521"; // Checking accounts
+            case "savings" -> "5432";  // Savings accounts
+            case "business" -> "2222"; // Business accounts
+            default -> "4521";
+        };
 
         // Генеруємо решту 16 цифр
         StringBuilder accountNumber = new StringBuilder(prefix);
@@ -325,7 +315,7 @@ public class AccountController {
     }
 
     /**
-     * 🆕 DTO для деталей акаунту з транзакціями
+     * DTO для деталей акаунту з транзакціями
      */
     @Setter
     @Getter

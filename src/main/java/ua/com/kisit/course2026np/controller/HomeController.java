@@ -1,5 +1,6 @@
 package ua.com.kisit.course2026np.controller;
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -32,7 +33,12 @@ public class HomeController {
     }
 
     @PostMapping("/login")
-    public String handleLogin(@RequestParam String email, @RequestParam String password, Model model) {
+    public String handleLogin(
+            @RequestParam String email,
+            @RequestParam String password,
+            HttpSession session,
+            Model model
+    ) {
         Optional<User> userOpt = userRepository.findAll().stream()
                 .filter(u -> u.getEmail().equalsIgnoreCase(email.trim()))
                 .findFirst();
@@ -48,6 +54,10 @@ public class HomeController {
             model.addAttribute("error", "Невірний email або пароль");
             return "login";
         }
+
+        // Зберігаємо userId в сесію — це ключовий рядок
+        session.setAttribute("userId", user.getId());
+        session.setAttribute("userRole", user.getRole());
 
         if (user.getRole() == UserRole.ADMIN) {
             return "redirect:/admin";
@@ -91,7 +101,8 @@ public class HomeController {
     }
 
     @GetMapping("/logout")
-    public String logout() {
+    public String logout(HttpSession session) {
+        session.invalidate();
         return "redirect:/";
     }
 }

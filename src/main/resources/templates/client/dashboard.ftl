@@ -35,7 +35,7 @@
                 Dashboard
             </a>
             <a href="/dashboard/accounts" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors">
-                <i data-lucide="credit-card" class="h-4 w-4"></i>
+                <i data-lucide="landmark" class="h-4 w-4"></i>
                 My Accounts
             </a>
             <a href="/dashboard/cards" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors">
@@ -47,7 +47,7 @@
                 Make Payment
             </a>
             <a href="/dashboard/transactions" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors">
-                <i data-lucide="list" class="h-4 w-4"></i>
+                <i data-lucide="receipt" class="h-4 w-4"></i>
                 Transactions
             </a>
             <a href="/dashboard/settings" class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors">

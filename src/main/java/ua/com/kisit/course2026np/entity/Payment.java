@@ -12,6 +12,7 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Сутність платежу
@@ -107,6 +108,10 @@ public class Payment {
         this.completedAt = LocalDateTime.now();
     }
 
+    public String getCreatedAtFormatted() {
+        if (createdAt == null) return "";
+        return createdAt.format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
+    }
     /**
      * Перевірка чи платіж завершено
      */

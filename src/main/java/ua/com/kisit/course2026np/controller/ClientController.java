@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ua.com.kisit.course2026np.entity.*;
 import ua.com.kisit.course2026np.repository.*;
+import ua.com.kisit.course2026np.service.PaymentService;
+import ua.com.kisit.course2026np.service.AccountService;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -25,11 +27,32 @@ public class ClientController {
     private final AccountRepository accountRepository;
     private final PaymentRepository paymentRepository;
     private final CreditCardRepository creditCardRepository;
+    private final PaymentService paymentService;
+    private final AccountService accountService;
+
+    // ========== HELPER: отримати поточного користувача з сесії ==========
+    // Якщо сесія є — повертаємо реального юзера.
+    // Якщо ні — fallback на першого CLIENT (для сумісності поки немає логіну)
+    private User getCurrentUser(HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId != null) {
+            return userRepository.findById(userId)
+                    .orElseGet(this::getFallbackUser);
+        }
+        return getFallbackUser();
+    }
+
+    private User getFallbackUser() {
+        return userRepository.findAll().stream()
+                .filter(u -> u.getRole() == UserRole.CLIENT)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No CLIENT user found in DB"));
+    }
 
     // --- 1. DASHBOARD ---
     @GetMapping({"", "/"})
-    public String dashboard(Model model) {
-        User user = getDemoUser();
+    public String dashboard(HttpSession session, Model model) {
+        User user = getCurrentUser(session);
 
         List<CreditCard> userCards = creditCardRepository.findByUser(user);
         List<Account> userAccounts = getUserAccounts(userCards);
@@ -68,38 +91,27 @@ public class ClientController {
         return "client/dashboard";
     }
 
-    // --- 2. ACCOUNTS (НОВИЙ ЕНДПОІНТ З ПОВНОЮ СТАТИСТИКОЮ) ---
+    // --- 2. ACCOUNTS ---
     @GetMapping("/accounts")
-    public String accounts(Model model) {
-        User user = getDemoUser();
+    public String accounts(HttpSession session, Model model) {
+        User user = getCurrentUser(session);
 
-        // Отримуємо всі картки користувача
         List<CreditCard> userCards = creditCardRepository.findByUser(user);
-
-        // Отримуємо всі рахунки користувача через картки
         List<Account> accounts = getUserAccounts(userCards);
 
-        // Розраховуємо статистику
         BigDecimal totalBalance = accounts.stream()
                 .filter(Account::isActive)
                 .map(Account::getBalance)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        long activeCount = accounts.stream()
-                .filter(Account::isActive)
-                .count();
+        long activeCount = accounts.stream().filter(Account::isActive).count();
+        long blockedCount = accounts.stream().filter(a -> a.getStatus() == AccountStatus.BLOCKED).count();
 
-        long blockedCount = accounts.stream()
-                .filter(a -> a.getStatus() == AccountStatus.BLOCKED)
-                .count();
-
-        // Знаходимо максимальний баланс для прогрес-барів
         BigDecimal maxBalance = accounts.stream()
                 .map(Account::getBalance)
                 .max(BigDecimal::compareTo)
                 .orElse(BigDecimal.ONE);
 
-        // Додаємо дані в модель
         model.addAttribute("user", user);
         model.addAttribute("accounts", accounts);
         model.addAttribute("totalBalance", formatCurrency(totalBalance));
@@ -110,38 +122,31 @@ public class ClientController {
         return "client/accounts";
     }
 
-    // --- 3. CARDS (Оновлено для підтримки списку) ---
+    // --- 3. CARDS ---
     @GetMapping("/cards")
-    public String cards(Model model) {
-        User user = getDemoUser();
+    public String cards(HttpSession session, Model model) {
+        User user = getCurrentUser(session);
         List<CreditCard> cards = creditCardRepository.findByUser(user);
         model.addAttribute("cards", cards);
         model.addAttribute("user", user);
         return "client/cards";
     }
 
-    // --- 3.1 ADD CARD (Правки для коректної дати та безпеки) ---
     @PostMapping("/cards/add")
     public String addCard(@RequestParam String cardNumber,
                           @RequestParam String cardholderName,
                           @RequestParam String expiryDate,
                           @RequestParam String cvv,
+                          HttpSession session,
                           RedirectAttributes redirectAttributes) {
         try {
-            // Очищення номера від пробілів
             String cleanCardNumber = cardNumber.replace(" ", "").trim();
-
-            // ✅ Валідація номера картки (має бути 16 цифр)
             if (!cleanCardNumber.matches("^\\d{16}$")) {
                 throw new IllegalArgumentException("Номер картки має містити 16 цифр");
             }
-
-            // ✅ Валідація CVV (має бути 3 цифри)
             if (!cvv.matches("^\\d{3}$")) {
                 throw new IllegalArgumentException("CVV має містити 3 цифри");
             }
-
-            // Перевірка формату дати MM/YY
             if (!expiryDate.matches("^(0[1-9]|1[0-2])/[0-9]{2}$")) {
                 throw new IllegalArgumentException("Невірний формат дати. Використовуйте MM/YY");
             }
@@ -150,17 +155,13 @@ public class ClientController {
             int month = Integer.parseInt(dateParts[0]);
             int yearShort = Integer.parseInt(dateParts[1]);
             int yearFull = 2000 + yearShort;
-
-            // Встановлюємо дату на останній день місяця
             LocalDate expiryLocalDate = LocalDate.of(yearFull, month, YearMonth.of(yearFull, month).lengthOfMonth());
 
             if (expiryLocalDate.isBefore(LocalDate.now())) {
                 throw new IllegalArgumentException("Термін дії картки вже закінчився!");
             }
 
-            User currentUser = getDemoUser();
-
-            // ✅ Перевірка на дублікат номера картки
+            User currentUser = getCurrentUser(session);
             if (creditCardRepository.existsByCardNumber(cleanCardNumber)) {
                 throw new IllegalArgumentException("Картка з таким номером вже існує");
             }
@@ -186,19 +187,15 @@ public class ClientController {
         return "redirect:/dashboard/cards";
     }
 
-    // --- 3.2 DELETE CARD (Нова функція, була в Lovable) ---
     @PostMapping("/cards/delete/{id}")
-    public String deleteCard(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String deleteCard(@PathVariable Long id, HttpSession session, RedirectAttributes redirectAttributes) {
         try {
-            User user = getDemoUser();
+            User user = getCurrentUser(session);
             CreditCard card = creditCardRepository.findById(id)
                     .orElseThrow(() -> new IllegalArgumentException("Картку не знайдено"));
-
-            // Перевірка, що картка належить поточному користувачу
             if (!card.getUser().getId().equals(user.getId())) {
                 throw new IllegalStateException("Доступ заборонено");
             }
-
             creditCardRepository.delete(card);
             redirectAttributes.addFlashAttribute("successMessage", "Картку успішно видалено.");
         } catch (Exception e) {
@@ -208,34 +205,94 @@ public class ClientController {
         return "redirect:/dashboard/cards";
     }
 
-    // --- 4. PAYMENT ---
+    // --- 4. PAYMENT (головна сторінка) ---
     @GetMapping("/payment")
-    public String payment(Model model) {
-        User user = getDemoUser();
-        addCommonData(model, user);
-        return "client/payment";
-    }
+    public String payment(HttpSession session, Model model) {
+        User user = getCurrentUser(session);
 
-    // --- 5. TRANSACTIONS ---
-    @GetMapping("/transactions")
-    public String transactions(Model model) {
-        User user = getDemoUser();
         List<CreditCard> userCards = creditCardRepository.findByUser(user);
         List<Account> userAccounts = getUserAccounts(userCards);
 
-        List<Payment> payments = userAccounts.stream()
+        // Останні отримувачі (для швидкого вибору)
+        List<Payment> recentPayments = userAccounts.stream()
                 .flatMap(account -> paymentRepository.findByAccountOrderByCreatedAtDesc(account).stream())
+                .filter(p -> p.getRecipientAccount() != null && !p.getRecipientAccount().isBlank())
+                .limit(5)
                 .toList();
 
-        model.addAttribute("payments", payments);
         model.addAttribute("user", user);
-        return "client/transactions";
+        model.addAttribute("accounts", userAccounts);
+        model.addAttribute("recentPayments", recentPayments);
+
+        return "client/payment";
     }
+
+    // --- 4.1 PAYMENT SUBMIT (обробка форми) ---
+    @PostMapping("/payment/submit")
+    public String submitPayment(
+            @RequestParam Long accountId,
+            @RequestParam String recipientAccount,
+            @RequestParam BigDecimal amount,
+            @RequestParam String type,
+            @RequestParam(required = false) String description,
+            HttpSession session,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            User user = getCurrentUser(session);
+
+            // Перевіряємо що рахунок належить цьому користувачу
+            List<CreditCard> userCards = creditCardRepository.findByUser(user);
+            List<Account> userAccounts = getUserAccounts(userCards);
+
+            Account account = userAccounts.stream()
+                    .filter(a -> a.getId().equals(accountId))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Рахунок не знайдено або не належить вам"));
+
+            if (!account.isActive()) {
+                throw new IllegalStateException("Рахунок заблоковано");
+            }
+
+            // Будуємо платіж
+            Payment payment = Payment.builder()
+                    .amount(amount)
+                    .type(PaymentType.valueOf(type))
+                    .description(description)
+                    .recipientAccount(recipientAccount)
+                    .senderAccount(account.getAccountNumber())
+                    .build();
+
+            Payment result;
+            if ("REPLENISHMENT".equals(type)) {
+                result = paymentService.executeReplenishment(accountId, payment);
+            } else {
+                result = paymentService.executePayment(accountId, payment);
+            }
+
+            if (result.isCompleted()) {
+                redirectAttributes.addFlashAttribute("successMessage",
+                        "Платіж успішно виконано! ID: " + result.getTransactionId());
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage",
+                        "Платіж не вдався: " + result.getErrorMessage());
+            }
+
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        } catch (Exception e) {
+            log.error("Помилка при виконанні платежу", e);
+            redirectAttributes.addFlashAttribute("errorMessage", "Технічна помилка. Спробуйте пізніше.");
+        }
+
+        return "redirect:/dashboard/payment";
+    }
+
 
     // --- 6. SETTINGS ---
     @GetMapping("/settings")
-    public String settings(Model model) {
-        model.addAttribute("user", getDemoUser());
+    public String settings(HttpSession session, Model model) {
+        model.addAttribute("user", getCurrentUser(session));
         return "client/settings";
     }
 
@@ -243,31 +300,29 @@ public class ClientController {
     public String updateProfile(@RequestParam String firstName,
                                 @RequestParam String lastName,
                                 @RequestParam String email,
+                                HttpSession session,
                                 RedirectAttributes redirectAttributes) {
         try {
             if (firstName.trim().isEmpty() || lastName.trim().isEmpty() || email.trim().isEmpty()) {
                 redirectAttributes.addFlashAttribute("errorMessage", "Всі поля повинні бути заповнені!");
                 return "redirect:/dashboard/settings";
             }
-
             String nameRegex = "^[\\p{L} .'-]+$";
             if (!firstName.matches(nameRegex) || !lastName.matches(nameRegex)) {
                 redirectAttributes.addFlashAttribute("errorMessage", "Ім'я та прізвище повинні містити лише літери!");
                 return "redirect:/dashboard/settings";
             }
-
             String emailRegex = "^[\\w-.]+@([\\w-]+\\.)+[\\w-]{2,}$";
             if (!email.matches(emailRegex)) {
                 redirectAttributes.addFlashAttribute("errorMessage", "Невірний формат Email");
                 return "redirect:/dashboard/settings";
             }
 
-            User user = getDemoUser();
+            User user = getCurrentUser(session);
             user.setFirstName(firstName.trim());
             user.setLastName(lastName.trim());
             user.setEmail(email.trim());
             userRepository.save(user);
-
             redirectAttributes.addFlashAttribute("successMessage", "Профіль успішно оновлено!");
         } catch (Exception e) {
             log.error("Помилка при оновленні профілю", e);
@@ -279,15 +334,16 @@ public class ClientController {
     @PostMapping("/settings/update-password")
     public String updatePassword(@RequestParam String currentPassword,
                                  @RequestParam String newPassword,
+                                 HttpSession session,
                                  RedirectAttributes redirectAttributes) {
-        User user = getDemoUser();
+        User user = getCurrentUser(session);
         if (!user.getPassword().equals(currentPassword)) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Incorrect current password!");
+            redirectAttributes.addFlashAttribute("errorMessage", "Невірний поточний пароль!");
             return "redirect:/dashboard/settings";
         }
         user.setPassword(newPassword);
         userRepository.save(user);
-        redirectAttributes.addFlashAttribute("successMessage", "Password changed successfully!");
+        redirectAttributes.addFlashAttribute("successMessage", "Пароль успішно змінено!");
         return "redirect:/dashboard/settings";
     }
 
@@ -305,21 +361,7 @@ public class ClientController {
                 .toList();
     }
 
-    private void addCommonData(Model model, User user) {
-        List<CreditCard> userCards = creditCardRepository.findByUser(user);
-        List<Account> accounts = getUserAccounts(userCards);
-        model.addAttribute("accounts", accounts);
-        model.addAttribute("user", user);
-    }
-
     private String formatCurrency(BigDecimal amount) {
         return String.format("$%,.2f", amount);
-    }
-
-    private User getDemoUser() {
-        return userRepository.findAll().stream()
-                .filter(u -> u.getRole() == UserRole.CLIENT)
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("User not found"));
     }
 }
