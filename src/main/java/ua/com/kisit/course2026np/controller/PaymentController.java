@@ -167,6 +167,33 @@ public class PaymentController {
     }
 
     /**
+     * CREATE - Execute a transfer between two accounts (deducts sender, credits recipient)
+     * POST http://localhost:8080/api/payments/transfer
+     *
+     * Request body example:
+     * {
+     *   "accountId": 1,
+     *   "recipientAccountNumber": "UA123456789012345678",
+     *   "payment": { "amount": 100.00, "description": "Rent" }
+     * }
+     */
+    @PostMapping("/api/payments/transfer")
+    @ResponseBody
+    public ResponseEntity<Payment> executeTransfer(@RequestBody TransferRequest request) {
+        try {
+            Payment executed = paymentService.executeTransfer(
+                    request.getAccountId(),
+                    request.getRecipientAccountNumber(),
+                    request.getPayment()
+            );
+            return ResponseEntity.status(HttpStatus.CREATED).body(executed);
+        } catch (IllegalArgumentException e) {
+            log.error("Transfer failed: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
      * READ - Get all payments
      * GET http://localhost:8080/api/payments
      */
@@ -266,5 +293,13 @@ public class PaymentController {
     public static class ExecutePaymentRequest {
         private Long accountId;
         private Payment payment;
+    }
+
+    @Setter
+    @Getter
+    public static class TransferRequest {
+        private Long accountId;                 // sender account ID
+        private String recipientAccountNumber;  // recipient account number
+        private Payment payment;                // amount, description, type, etc.
     }
 }

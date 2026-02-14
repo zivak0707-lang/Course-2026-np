@@ -13,10 +13,6 @@ import ua.com.kisit.course2026np.repository.AccountRepository;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Service for Payment business logic
- * Handles transaction processing, filtering, and pagination
- */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -25,17 +21,28 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final AccountRepository accountRepository;
 
-    // ============= ORIGINAL METHODS (НЕ ЧІПАЄМО) =============
+    // ============= ORIGINAL METHODS =============
 
     public Payment createPayment(Payment payment) {
         return paymentRepository.save(payment);
     }
 
+    // ✅ ВИПРАВЛЕНО: додана перевірка блокування рахунку +
+    //               payment.setAccount() тепер викликається ПЕРЕД save() при помилці
     public Payment executePayment(Long accountId, Payment payment) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found"));
 
+        // ✅ Перевірка блокування (було відсутнє)
+        if (account.getStatus() == AccountStatus.BLOCKED) {
+            payment.setAccount(account);
+            payment.fail("Sender account is blocked");
+            return paymentRepository.save(payment);
+        }
+
         if (account.getBalance().compareTo(payment.getAmount()) < 0) {
+            // ✅ setAccount() перед save() — інакше account_id = null → constraint violation
+            payment.setAccount(account);
             payment.fail("Insufficient funds");
             return paymentRepository.save(payment);
         }
@@ -49,9 +56,17 @@ public class PaymentService {
         return paymentRepository.save(payment);
     }
 
+    // ✅ ВИПРАВЛЕНО: додана перевірка блокування рахунку
     public Payment executeReplenishment(Long accountId, Payment payment) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+
+        // ✅ Перевірка блокування (було відсутнє)
+        if (account.getStatus() == AccountStatus.BLOCKED) {
+            payment.setAccount(account);
+            payment.fail("Account is blocked");
+            return paymentRepository.save(payment);
+        }
 
         account.setBalance(account.getBalance().add(payment.getAmount()));
         accountRepository.save(account);
@@ -61,6 +76,54 @@ public class PaymentService {
         payment.complete();
         return paymentRepository.save(payment);
     }
+
+    @Transactional
+    public Payment executeTransfer(Long senderAccountId, String recipientAccountNumber, Payment payment) {
+        Account sender = accountRepository.findById(senderAccountId)
+                .orElseThrow(() -> new IllegalArgumentException("Sender account not found"));
+
+        Account recipient = accountRepository.findByAccountNumber(recipientAccountNumber)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Recipient account not found: " + recipientAccountNumber));
+
+        if (sender.getId().equals(recipient.getId())) {
+            payment.setAccount(sender);
+            payment.fail("Cannot transfer to the same account");
+            return paymentRepository.save(payment);
+        }
+
+        if (sender.getBalance().compareTo(payment.getAmount()) < 0) {
+            payment.setAccount(sender);
+            payment.fail("Insufficient funds");
+            return paymentRepository.save(payment);
+        }
+
+        if (sender.getStatus() == AccountStatus.BLOCKED) {
+            payment.setAccount(sender);
+            payment.fail("Sender account is blocked");
+            return paymentRepository.save(payment);
+        }
+
+        if (recipient.getStatus() == AccountStatus.BLOCKED) {
+            payment.setAccount(sender);
+            payment.fail("Recipient account is blocked");
+            return paymentRepository.save(payment);
+        }
+
+        sender.setBalance(sender.getBalance().subtract(payment.getAmount()));
+        accountRepository.save(sender);
+
+        recipient.setBalance(recipient.getBalance().add(payment.getAmount()));
+        accountRepository.save(recipient);
+
+        payment.setAccount(sender);
+        payment.setSenderAccount(sender.getAccountNumber());
+        payment.setRecipientAccount(recipient.getAccountNumber());
+        payment.complete();
+        return paymentRepository.save(payment);
+    }
+
+    // ============= READ METHODS =============
 
     @Transactional(readOnly = true)
     public List<Payment> getAllPayments() {
@@ -101,20 +164,8 @@ public class PaymentService {
         return paymentRepository.findByStatus(status).size();
     }
 
-    // ============= NEW METHODS FOR TRANSACTIONS PAGE =============
+    // ============= TRANSACTIONS PAGE =============
 
-    /**
-     * Get paginated payments for a user with optional filters
-     * Used by: PaymentController.transactionsPage()
-     *
-     * @param user The user whose payments to retrieve
-     * @param search Search query for description (optional)
-     * @param type Filter by payment type (optional)
-     * @param status Filter by payment status (optional)
-     * @param page Page number (0-based)
-     * @param size Number of items per page
-     * @return Page of payments
-     */
     @Transactional(readOnly = true)
     public Page<Payment> getPaymentsForUser(
             User user,
@@ -126,12 +177,10 @@ public class PaymentService {
     ) {
         Pageable pageable = PageRequest.of(page, size);
 
-        // If all filters are null/empty, get all payments for user
         if ((search == null || search.trim().isEmpty()) && type == null && status == null) {
             return paymentRepository.findByUser(user, pageable);
         }
 
-        // Apply filters
         return paymentRepository.findByUserWithFilters(
                 user,
                 search != null && !search.trim().isEmpty() ? search.trim() : null,
@@ -141,47 +190,25 @@ public class PaymentService {
         );
     }
 
-    /**
-     * Get recent transactions for dashboard (limited to specified number)
-     * Used by: ClientController.dashboard() - для віджету "Recent Transactions"
-     */
     @Transactional(readOnly = true)
     public List<Payment> getRecentTransactionsForUser(User user, int limit) {
         Pageable pageable = PageRequest.of(0, limit);
         return paymentRepository.findByUser(user, pageable).getContent();
     }
 
-    /**
-     * Get recent payments by account (limited to specified number)
-     * Used by: AccountController.getAccountDetails() - для деталей акаунту
-     *
-     * @param account Account to get payments for
-     * @param limit Maximum number of payments to return
-     * @return List of recent payments ordered by date descending
-     */
     @Transactional(readOnly = true)
     public List<Payment> getRecentPaymentsByAccount(Account account, int limit) {
-        List<Payment> allPayments = paymentRepository.findByAccountOrderByCreatedAtDesc(account);
-
-        // Обмежуємо кількість результатів
-        return allPayments.stream()
+        return paymentRepository.findByAccountOrderByCreatedAtDesc(account)
+                .stream()
                 .limit(limit)
                 .toList();
     }
 
-    /**
-     * Count total payments for user
-     * Can be used for dashboard statistics
-     */
     @Transactional(readOnly = true)
     public long countPaymentsForUser(User user) {
         return paymentRepository.countByUser(user);
     }
 
-    /**
-     * Count pending payments for user
-     * Used for dashboard "Pending" count
-     */
     @Transactional(readOnly = true)
     public long countPendingPaymentsForUser(User user) {
         return paymentRepository.countByUserAndStatus(user, PaymentStatus.PENDING);

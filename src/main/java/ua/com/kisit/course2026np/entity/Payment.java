@@ -14,10 +14,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-/**
- * Сутність платежу
- * Представляє фінансову транзакцію в системі
- */
 @Entity
 @Table(name = "payments", indexes = {
         @Index(name = "idx_payment_account", columnList = "account_id"),
@@ -57,10 +53,14 @@ public class Payment {
     @Column(length = 500)
     private String description;
 
-    @Column(name = "recipient_account", length = 20)
+    // ✅ ВИПРАВЛЕНО: збільшено з VARCHAR(20) до VARCHAR(255)
+    // Причина: номери рахунків (UA + 20 цифр = 22 символи) і номери карток (16 символів)
+    // легко перевищують VARCHAR(20), що викликало:
+    // "Data too long for column 'recipient_account' at row 1"
+    @Column(name = "recipient_account", length = 255)
     private String recipientAccount;
 
-    @Column(name = "sender_account", length = 20)
+    @Column(name = "sender_account", length = 255)
     private String senderAccount;
 
     @Column(name = "transaction_id", unique = true, length = 50)
@@ -84,24 +84,15 @@ public class Payment {
         }
     }
 
-    /**
-     * Генерація унікального ID транзакції
-     */
     private String generateTransactionId() {
         return "TXN" + System.currentTimeMillis() + String.format("%04d", (int)(Math.random() * 10000));
     }
 
-    /**
-     * Підтвердження платежу
-     */
     public void complete() {
         this.status = PaymentStatus.COMPLETED;
         this.completedAt = LocalDateTime.now();
     }
 
-    /**
-     * Відхилення платежу
-     */
     public void fail(String errorMessage) {
         this.status = PaymentStatus.FAILED;
         this.errorMessage = errorMessage;
@@ -112,23 +103,15 @@ public class Payment {
         if (createdAt == null) return "";
         return createdAt.format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
     }
-    /**
-     * Перевірка чи платіж завершено
-     */
+
     public boolean isCompleted() {
         return this.status == PaymentStatus.COMPLETED;
     }
 
-    /**
-     * Перевірка чи платіж не вдався
-     */
     public boolean isFailed() {
         return this.status == PaymentStatus.FAILED;
     }
 
-    /**
-     * Перевірка чи платіж в обробці
-     */
     public boolean isPending() {
         return this.status == PaymentStatus.PENDING;
     }

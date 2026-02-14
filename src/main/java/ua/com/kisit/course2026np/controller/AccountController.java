@@ -93,23 +93,36 @@ public class AccountController {
     @ResponseBody
     public ResponseEntity<AccountDetailsResponse> getAccountDetails(@PathVariable Long id) {
         try {
-            // Знаходимо акаунт
             Account account = accountService.getAccountById(id)
                     .orElseThrow(() -> new IllegalArgumentException("Рахунок не знайдено"));
 
-            // Отримуємо останні 5 транзакцій
             List<Payment> recentPayments = paymentService.getRecentPaymentsByAccount(account, 5);
 
-            // Формуємо відповідь
+            // Map Payment entities to flat DTO to avoid Jackson circular reference:
+            // Payment.account -> Account.payments -> Payment... causes infinite nesting
+            List<AccountDetailsResponse.PaymentSummary> summaries = recentPayments.stream()
+                    .map(p -> new AccountDetailsResponse.PaymentSummary(
+                            p.getId(),
+                            p.getAmount(),
+                            p.getType() != null ? p.getType().name() : null,
+                            p.getStatus() != null ? p.getStatus().name() : null,
+                            p.getDescription(),
+                            p.getRecipientAccount(),
+                            p.getSenderAccount(),
+                            p.getCreatedAt() != null ? p.getCreatedAt().toString() : null
+                    ))
+                    .toList();
+
             AccountDetailsResponse response = new AccountDetailsResponse();
             response.setAccountNumber(account.getAccountNumber());
+            response.setAccountName(account.getAccountName());
             response.setStatus(account.getStatus().name());
             response.setBalance(account.getBalance());
-            response.setRecentActivity(recentPayments);
+            response.setRecentActivity(summaries);
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
@@ -315,14 +328,33 @@ public class AccountController {
     }
 
     /**
-     * DTO для деталей акаунту з транзакціями
+     * Safe DTO for account details.
+     * Uses flat PaymentSummary instead of Payment entity
+     * to break the Payment->Account->Payment circular reference.
      */
     @Setter
     @Getter
     public static class AccountDetailsResponse {
         private String accountNumber;
+        private String accountName;  // used by JS to update modal title
         private String status;
         private BigDecimal balance;
-        private List<Payment> recentActivity;
+        private List<PaymentSummary> recentActivity;
+
+        /** Flat payment DTO — no reference back to Account */
+        @Setter
+        @Getter
+        @lombok.AllArgsConstructor
+        @lombok.NoArgsConstructor
+        public static class PaymentSummary {
+            private Long id;
+            private BigDecimal amount;
+            private String type;
+            private String status;
+            private String description;
+            private String recipientAccount;
+            private String senderAccount;
+            private String createdAt;
+        }
     }
 }

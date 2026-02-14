@@ -184,20 +184,21 @@
 
                         <#if balancePercent gt 100><#assign balancePercent = 100></#if>
 
-                    <#-- Determine account type icon and name -->
-                        <#assign accountType = "Checking">
+                    <#-- Determine account type icon and name from accountName field -->
+                        <#assign accountType = account.accountName!"Checking">
                         <#assign accountIcon = "credit-card">
-                        <#if account.accountNumber?starts_with("5432")>
-                            <#assign accountType = "Savings">
+                        <#assign accountTypeLower = accountType?lower_case>
+                        <#if accountTypeLower?contains("saving")>
                             <#assign accountIcon = "piggy-bank">
-                        <#elseif account.accountNumber?starts_with("2222")>
-                            <#assign accountType = "Business">
+                        <#elseif accountTypeLower?contains("business")>
                             <#assign accountIcon = "building-2">
                         </#if>
 
                         <div class="account-card group relative overflow-hidden transition-all duration-300 hover:shadow-lg cursor-pointer rounded-xl border border-gray-200 bg-white ${account.status.name()}"
                              data-status="${account.status.name()?lower_case}"
-                             onclick="showAccountDetails('${account.id}')">
+                             data-account-name="${accountType}"
+                             data-account-icon="${accountIcon}"
+                             onclick="showAccountDetails('${account.id}', this)">
                             <div class="p-6 space-y-4">
                                 <div class="flex items-start justify-between">
                                     <div class="flex items-center gap-3">
@@ -233,7 +234,7 @@
                                             ••••••
                                         </p>
                                         <p class="text-2xl font-bold tracking-tight balance-revealed hidden" data-account-id="${account.id}">
-                                            $${account.balance?string("0.00")}
+                                            $${account.balance?string("#,##0.00")}
                                         </p>
                                         <button onclick="event.stopPropagation(); toggleBalance('${account.id}')" class="text-gray-500 hover:text-gray-900 transition-colors">
                                             <i data-lucide="eye" class="h-4 w-4 balance-icon-hidden" data-account-id="${account.id}"></i>
@@ -327,9 +328,9 @@
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-lg bg-blue-600/10 flex items-center justify-center text-blue-600">
-                    <i data-lucide="credit-card" class="h-5 w-5"></i>
+                    <i id="modal-account-icon" data-lucide="credit-card" class="h-5 w-5"></i>
                 </div>
-                <h3 class="text-lg font-semibold">Checking Account</h3>
+                <h3 id="modal-account-title" class="text-lg font-semibold">Account Details</h3>
             </div>
             <button onclick="closeAccountDetailsModal()" class="text-gray-400 hover:text-gray-600">
                 <i data-lucide="x" class="h-5 w-5"></i>
@@ -516,22 +517,35 @@
     }
 
     // 🆕 Show account details modal
-    function showAccountDetails(accountId) {
+    // cardElement is passed from onclick so we can read data-account-name / data-account-icon
+    function showAccountDetails(accountId, cardElement) {
         const modal = document.getElementById('accountDetailsModal');
         modal.classList.remove('hidden');
         modal.classList.add('flex');
 
-        // Show loading spinner
+        // --- Immediately update title & icon from the clicked card's data attributes ---
+        if (cardElement) {
+            const name = cardElement.getAttribute('data-account-name') || 'Account Details';
+            const icon = cardElement.getAttribute('data-account-icon') || 'credit-card';
+
+            document.getElementById('modal-account-title').textContent = name;
+
+            const iconEl = document.getElementById('modal-account-icon');
+            iconEl.setAttribute('data-lucide', icon);
+            lucide.createIcons();  // re-render the new icon immediately
+        }
+
+        // Show loading spinner for activity
         document.getElementById('modal-activity').innerHTML = 
             '<div class="flex justify-center py-8">' +
                 '<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>' +
             '</div>';
 
-        // Fetch account details
+        // Fetch full account details from API
         fetch('/api/accounts/' + accountId + '/details')
             .then(response => response.json())
             .then(data => {
-                // Update modal content
+                // Update number, balance, status
                 document.getElementById('modal-account-number').textContent = data.accountNumber;
                 document.getElementById('modal-balance').textContent = '$' + parseFloat(data.balance).toFixed(2);
                 document.getElementById('modal-status').textContent = data.status;
@@ -539,15 +553,26 @@
                     ? 'inline-flex items-center rounded-full bg-blue-600 px-2.5 py-0.5 text-xs font-semibold text-white'
                     : 'inline-flex items-center rounded-full bg-red-600 px-2.5 py-0.5 text-xs font-semibold text-white';
 
+                // If the API returns accountName, update title too (keeps in sync with DB)
+                if (data.accountName) {
+                    document.getElementById('modal-account-title').textContent = data.accountName;
+                    // Update icon based on accountName
+                    const nameLower = data.accountName.toLowerCase();
+                    const resolvedIcon = nameLower.includes('saving') ? 'piggy-bank'
+                                      : nameLower.includes('business') ? 'building-2'
+                                      : 'credit-card';
+                    document.getElementById('modal-account-icon').setAttribute('data-lucide', resolvedIcon);
+                }
+
                 // Render recent activity
                 const activityHtml = data.recentActivity && data.recentActivity.length > 0
                     ? data.recentActivity.map(payment => {
-                        const isIncoming = payment.paymentType === 'DEPOSIT';
+                        const isIncoming = payment.type && payment.type === 'REPLENISHMENT';
                         const iconName = isIncoming ? 'arrow-down-left' : 'arrow-up-right';
                         const iconColor = isIncoming ? 'text-green-600' : 'text-red-600';
                         const iconBg = isIncoming ? 'bg-green-50' : 'bg-red-50';
                         const amountColor = isIncoming ? 'text-green-600' : 'text-red-600';
-                        const amountSign = isIncoming ? '+' : '';
+                        const amountSign = isIncoming ? '+' : '-';
 
                         return '<div class="flex items-center justify-between">' +
                                 '<div class="flex items-center gap-3">' +
@@ -555,7 +580,7 @@
                                         '<i data-lucide="' + iconName + '" class="h-4 w-4"></i>' +
                                     '</div>' +
                                     '<div>' +
-                                        '<p class="text-sm font-medium text-gray-900">' + (payment.description || payment.paymentType) + '</p>' +
+                                        '<p class="text-sm font-medium text-gray-900">' + (payment.description || payment.type) + '</p>' +
                                         '<p class="text-xs text-gray-500">' + formatDate(payment.createdAt) + '</p>' +
                                     '</div>' +
                                 '</div>' +

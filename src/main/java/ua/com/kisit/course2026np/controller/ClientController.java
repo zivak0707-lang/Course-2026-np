@@ -30,9 +30,6 @@ public class ClientController {
     private final PaymentService paymentService;
     private final AccountService accountService;
 
-    // ========== HELPER: отримати поточного користувача з сесії ==========
-    // Якщо сесія є — повертаємо реального юзера.
-    // Якщо ні — fallback на першого CLIENT (для сумісності поки немає логіну)
     private User getCurrentUser(HttpSession session) {
         Long userId = (Long) session.getAttribute("userId");
         if (userId != null) {
@@ -205,7 +202,7 @@ public class ClientController {
         return "redirect:/dashboard/cards";
     }
 
-    // --- 4. PAYMENT (головна сторінка) ---
+    // --- 4. PAYMENT (сторінка) ---
     @GetMapping("/payment")
     public String payment(HttpSession session, Model model) {
         User user = getCurrentUser(session);
@@ -213,7 +210,6 @@ public class ClientController {
         List<CreditCard> userCards = creditCardRepository.findByUser(user);
         List<Account> userAccounts = getUserAccounts(userCards);
 
-        // Останні отримувачі (для швидкого вибору)
         List<Payment> recentPayments = userAccounts.stream()
                 .flatMap(account -> paymentRepository.findByAccountOrderByCreatedAtDesc(account).stream())
                 .filter(p -> p.getRecipientAccount() != null && !p.getRecipientAccount().isBlank())
@@ -227,11 +223,20 @@ public class ClientController {
         return "client/payment";
     }
 
-    // --- 4.1 PAYMENT SUBMIT (обробка форми) ---
+    // --- 4.1 PAYMENT SUBMIT ---
+    // ✅ ВИПРАВЛЕНО: REPLENISHMENT тепер правильно поповнює СВІЙ рахунок
+    // ❌ БУЛО: викликав executeTransfer(accountId, recipientAccount, payment)
+    //          → намагався зняти гроші з рахунку і переказати на ІНШИЙ рахунок
+    //          → якщо recipientAccount порожній або не існує — падав з помилкою
+    // ✅ СТАЛО: REPLENISHMENT викликає executeReplenishment(accountId, payment)
+    //          → просто додає суму до балансу обраного рахунку, без потреби в recipientAccount
+    //
+    // TRANSFER: окремий тип для переказу між рахунками (вимагає recipientAccount)
+    // PAYMENT:  списання коштів з рахунку (звичайний платіж)
     @PostMapping("/payment/submit")
     public String submitPayment(
             @RequestParam Long accountId,
-            @RequestParam String recipientAccount,
+            @RequestParam(required = false) String recipientAccount,
             @RequestParam BigDecimal amount,
             @RequestParam String type,
             @RequestParam(required = false) String description,
@@ -254,28 +259,42 @@ public class ClientController {
                 throw new IllegalStateException("Рахунок заблоковано");
             }
 
-            // Будуємо платіж
             Payment payment = Payment.builder()
                     .amount(amount)
                     .type(PaymentType.valueOf(type))
                     .description(description)
-                    .recipientAccount(recipientAccount)
-                    .senderAccount(account.getAccountNumber())
                     .build();
 
             Payment result;
-            if ("REPLENISHMENT".equals(type)) {
-                result = paymentService.executeReplenishment(accountId, payment);
-            } else {
-                result = paymentService.executePayment(accountId, payment);
+
+            switch (type) {
+                case "REPLENISHMENT" -> {
+                    // ✅ Поповнення свого рахунку — не потребує recipientAccount
+                    result = paymentService.executeReplenishment(accountId, payment);
+                }
+                case "TRANSFER" -> {
+                    // Переказ на інший рахунок — потребує recipientAccount
+                    if (recipientAccount == null || recipientAccount.isBlank()) {
+                        throw new IllegalArgumentException("Вкажіть рахунок отримувача для переказу");
+                    }
+                    result = paymentService.executeTransfer(accountId, recipientAccount, payment);
+                }
+                default -> {
+                    // PAYMENT — звичайний платіж (списання)
+                    if (recipientAccount == null || recipientAccount.isBlank()) {
+                        throw new IllegalArgumentException("Вкажіть рахунок отримувача для платежу");
+                    }
+                    payment.setRecipientAccount(recipientAccount);
+                    result = paymentService.executePayment(accountId, payment);
+                }
             }
 
             if (result.isCompleted()) {
                 redirectAttributes.addFlashAttribute("successMessage",
-                        "Платіж успішно виконано! ID: " + result.getTransactionId());
+                        "Успішно! ID транзакції: " + result.getTransactionId());
             } else {
                 redirectAttributes.addFlashAttribute("errorMessage",
-                        "Платіж не вдався: " + result.getErrorMessage());
+                        "Операція не вдалась: " + result.getErrorMessage());
             }
 
         } catch (IllegalArgumentException | IllegalStateException e) {
@@ -288,8 +307,7 @@ public class ClientController {
         return "redirect:/dashboard/payment";
     }
 
-
-    // --- 6. SETTINGS ---
+    // --- 5. SETTINGS ---
     @GetMapping("/settings")
     public String settings(HttpSession session, Model model) {
         model.addAttribute("user", getCurrentUser(session));
@@ -347,7 +365,7 @@ public class ClientController {
         return "redirect:/dashboard/settings";
     }
 
-    // --- 7. LOGOUT ---
+    // --- 6. LOGOUT ---
     @GetMapping("/logout")
     public String logout(HttpSession session) {
         session.invalidate();
