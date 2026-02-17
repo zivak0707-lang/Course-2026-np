@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -16,7 +17,7 @@ import java.util.List;
 @Entity
 @Table(name = "credit_cards", indexes = {
         @Index(name = "idx_card_number", columnList = "card_number"),
-        @Index(name = "idx_card_user", columnList = "user_id")
+        @Index(name = "idx_card_user",   columnList = "user_id")
 })
 @Data
 @NoArgsConstructor
@@ -50,7 +51,6 @@ public class CreditCard {
     @JsonBackReference("user-cards")
     private User user;
 
-    // ОДНА КАРТА → БАГАТО РАХУНКІВ
     @OneToMany(mappedBy = "creditCard", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("card-accounts")
     @Builder.Default
@@ -60,13 +60,32 @@ public class CreditCard {
     @Builder.Default
     private Boolean isActive = true;
 
+    // ── NEW COLUMNS ────────────────────────────────────────────
+
+    /** BCrypt-hashed PIN. Never store plain text. */
+    @Column(name = "pin_code", length = 60)
+    private String pinCode;
+
+    /** Daily spending cap in currency units. NULL = no limit. */
+    @Column(name = "spending_limit", precision = 19, scale = 2)
+    private BigDecimal spendingLimit;
+
+    /** Running total of today's spending (reset at midnight). */
+    @Column(name = "daily_spent", precision = 19, scale = 2, nullable = false)
+    @Builder.Default
+    private BigDecimal dailySpent = BigDecimal.ZERO;
+
+    /** Date when dailySpent was last reset. */
+    @Column(name = "limit_reset_at")
+    private LocalDate limitResetAt;
+
+    // ── AUDIT ──────────────────────────────────────────────────
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
-
-    /* ===================== JPA LIFECYCLE ===================== */
 
     @PrePersist
     void onCreate() {
@@ -79,43 +98,33 @@ public class CreditCard {
         updatedAt = LocalDateTime.now();
     }
 
-    /* ===================== BUSINESS LOGIC ===================== */
+    // ── BUSINESS LOGIC ─────────────────────────────────────────
 
     public boolean isExpired() {
-        return expiryDate.isBefore(LocalDate.now());
+        return expiryDate != null && expiryDate.isBefore(LocalDate.now());
     }
 
     public String getMaskedCardNumber() {
-        if (cardNumber == null || cardNumber.length() < 4) {
-            return "";
-        }
+        if (cardNumber == null || cardNumber.length() < 4) return "";
         return "**** **** **** " + cardNumber.substring(cardNumber.length() - 4);
     }
 
-    /**
-     * ✅ НОВИЙ МЕТОД: Форматована дата для FreeMarker шаблонів
-     * Повертає дату в форматі MM/yy
-     */
     public String getFormattedExpiryDate() {
-        if (expiryDate == null) {
-            return "--/--";
-        }
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/yy");
-        return expiryDate.format(formatter);
+        if (expiryDate == null) return "--/--";
+        return expiryDate.format(DateTimeFormatter.ofPattern("MM/yy"));
     }
 
-    /* ===================== TEST HELPERS (FIX) ===================== */
+    /** True when this card has a spending limit configured. */
+    public boolean hasSpendingLimit() {
+        return spendingLimit != null && spendingLimit.compareTo(BigDecimal.ZERO) > 0;
+    }
 
-    /**
-     * Для тестів: повертає перший рахунок (якщо є)
-     */
+    // ── TEST HELPERS ───────────────────────────────────────────
+
     public Account getAccount() {
         return accounts.isEmpty() ? null : accounts.get(0);
     }
 
-    /**
-     * Для тестів: встановлює єдиний рахунок
-     */
     public void setAccount(Account account) {
         accounts.clear();
         if (account != null) {

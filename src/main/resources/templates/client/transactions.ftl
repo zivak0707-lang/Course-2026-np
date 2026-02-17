@@ -18,8 +18,10 @@
     <title>Transaction History - PayFlow</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+    </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
 
@@ -473,7 +475,7 @@
 
 <script>
     // Initialize Lucide icons
-    lucide.createIcons();
+    if (window.lucide) window.lucide.createIcons();
 
     // User menu dropdown
     document.addEventListener('DOMContentLoaded', function() {
@@ -494,7 +496,7 @@
         }
 
         // Reinitialize icons after any DOM updates
-        setTimeout(() => lucide.createIcons(), 100);
+        setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 100);
     });
 
     // Payment details modal
@@ -546,7 +548,7 @@
         modal.classList.remove('hidden');
         
         // Reinitialize icons
-        setTimeout(() => lucide.createIcons(), 50);
+        setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 50);
     }
 
     function closePaymentModal() {

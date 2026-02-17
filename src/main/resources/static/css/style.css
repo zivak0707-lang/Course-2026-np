@@ -1,489 +1,631 @@
-/* PayFlow - Enhanced Styles */
+/* ============================================================
+   PayFlow — Credit Card Visuals & Dark Modals
+   cards-modal.css
+   ============================================================ */
 
-:root {
-    --primary: #2563eb;
-    --primary-hover: #1d4ed8;
-    --success: #10b981;
-    --danger: #ef4444;
-    --warning: #f59e0b;
-    --muted: #64748b;
-    --background: #f8fafc;
-    --card-bg: #ffffff;
-    --border: #e2e8f0;
-    --text-muted: #64748b;
-    --radius: 0.75rem;
+
+/* ──────────────────────────────────────────────────────────
+   CREDIT CARD SHELL
+   ────────────────────────────────────────────────────────── */
+
+.pf-credit-card {
+    position: relative;
+    border-radius: 18px;
+    padding: 20px 22px 18px;
+    min-height: 190px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    user-select: none;
 }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+.pf-credit-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.4);
 }
 
-body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background-color: var(--background);
-    color: #1e293b;
-    line-height: 1.6;
+/* Colour variants */
+.pf-credit-card--dark {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
-/* Typography */
-h1 { font-size: 2rem; font-weight: 700; line-height: 1.2; }
-h2 { font-size: 1.5rem; font-weight: 600; line-height: 1.3; }
-h3 { font-size: 1.25rem; font-weight: 600; }
-p { margin-bottom: 1rem; }
-
-/* Animations */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+.pf-credit-card--navy {
+    background: linear-gradient(135deg, #1e3a5f 0%, #1a2d4f 55%, #142540 100%);
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
-@keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
+.pf-credit-card--teal {
+    background: linear-gradient(135deg, #0d3d3d 0%, #0b3030 55%, #072525 100%);
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
-@keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+/* Blocked state — desaturated + dimmed */
+.pf-credit-card--blocked {
+    filter: saturate(0.25) brightness(0.65);
 }
 
-.animate-fade-in { animation: fadeIn 0.5s ease-out; }
-.animate-scale-in { animation: scaleIn 0.3s ease-out; }
-.animate-slide-up { animation: slideUp 0.6s ease-out; }
 
-/* Buttons */
-.btn {
-    border-radius: 8px;
-    font-weight: 500;
-    padding: 0.625rem 1.25rem;
-    transition: all 0.2s;
+/* ──────────────────────────────────────────────────────────
+   TOP ROW
+   ────────────────────────────────────────────────────────── */
+
+.pf-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pf-brand-logo {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.pf-brand-name {
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+
+/* ──────────────────────────────────────────────────────────
+   GEAR / MANAGE BUTTON
+   ────────────────────────────────────────────────────────── */
+
+.pf-manage-btn {
+    background: rgba(255, 255, 255, 0.12);
     border: none;
+    color: rgba(255, 255, 255, 0.85);
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background 0.2s, color 0.2s;
+    padding: 0;
 }
 
-.btn-primary {
-    background-color: var(--primary);
-    color: white;
+.pf-manage-btn:hover,
+.pf-manage-btn:focus {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+    outline: none;
 }
 
-.btn-primary:hover {
-    background-color: var(--primary-hover);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+
+/* ──────────────────────────────────────────────────────────
+   DARK DROPDOWN
+   ────────────────────────────────────────────────────────── */
+
+.pf-card-dropdown {
+    background: #1e2535 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    padding: 6px !important;
+    min-width: 195px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55) !important;
 }
 
-.btn-outline-primary {
-    color: var(--primary);
-    border: 1px solid var(--primary);
-    background: transparent;
+.pf-dropdown-item {
+    color: #e2e8f0 !important;
+    border-radius: 8px !important;
+    padding: 9px 12px !important;
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    background: transparent !important;
+    border: none;
+    width: 100%;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-align: left;
 }
 
-.btn-outline-primary:hover {
-    background-color: var(--primary);
-    color: white;
-    border-color: var(--primary);
+.pf-dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #fff !important;
 }
 
-.btn-outline-danger {
-    color: var(--danger);
-    border: 1px solid var(--danger);
-    background: transparent;
+.pf-dropdown-item i {
+    font-size: 1rem;
+    flex-shrink: 0;
 }
 
-.btn-outline-danger:hover {
-    background-color: var(--danger);
-    color: white;
-    border-color: var(--danger);
+.pf-divider {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    margin: 4px 8px !important;
 }
 
-/* Cards */
-.card {
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    background: var(--card-bg);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    transition: all 0.3s;
+
+/* ──────────────────────────────────────────────────────────
+   CHIP ROW
+   ────────────────────────────────────────────────────────── */
+
+.pf-chip-row {
+    display: flex;
+    align-items: center;
+    margin-top: 14px;
 }
 
-.card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+.pf-chip {
+    width: 42px;
+    height: 32px;
+    background: linear-gradient(135deg, #d4a017, #f0c040, #b8860b);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.card-header {
-    background-color: transparent;
-    border-bottom: 1px solid var(--border);
-    padding: 1.25rem;
+.pf-chip-inner {
+    width: 26px;
+    height: 20px;
+    border: 1.5px solid rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+    background: linear-gradient(135deg, #c8940e, #e8b830);
+}
+
+
+/* ──────────────────────────────────────────────────────────
+   SMALL ICON BUTTONS (eye / copy)
+   ────────────────────────────────────────────────────────── */
+
+.pf-icon-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: rgba(255, 255, 255, 0.65);
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.78rem;
+    transition: background 0.2s, color 0.2s;
+    padding: 0;
+}
+
+.pf-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.22);
+    color: #fff;
+}
+
+
+/* ──────────────────────────────────────────────────────────
+   CARD NUMBER
+   ────────────────────────────────────────────────────────── */
+
+.pf-card-number {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1.05rem;
+    letter-spacing: 0.14em;
+    color: rgba(255, 255, 255, 0.88);
+    margin: 10px 0 6px;
+}
+
+
+/* ──────────────────────────────────────────────────────────
+   CARD FOOTER (holder / expiry / network)
+   ────────────────────────────────────────────────────────── */
+
+.pf-card-footer {
+    display: flex;
+    align-items: flex-end;
+    gap: 22px;
+}
+
+.pf-footer-label {
+    font-size: 0.575rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: rgba(255, 255, 255, 0.45);
+    margin-bottom: 2px;
+}
+
+.pf-footer-value {
+    font-size: 0.72rem;
     font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: 0.03em;
 }
 
-.card-body {
-    padding: 1.5rem;
+/* VISA italic text logo */
+.pf-visa {
+    font-style: italic;
+    font-weight: 800;
+    font-size: 1.35rem;
+    color: #fff;
+    letter-spacing: -0.03em;
+    font-family: 'Times New Roman', Times, serif;
 }
 
-/* Sidebar */
-.sidebar {
-    min-height: 100vh;
-    background-color: white;
-    border-right: 1px solid var(--border);
-    width: 210px;
+/* Mastercard overlapping circles */
+.pf-mastercard {
+    display: flex;
+    align-items: center;
+}
+
+.pf-mc-left,
+.pf-mc-right {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.pf-mc-left  { background: #eb001b; margin-right: -10px; z-index: 1; }
+.pf-mc-right { background: #f79e1b; opacity: 0.9; }
+
+
+/* ──────────────────────────────────────────────────────────
+   BLOCKED OVERLAY
+   ────────────────────────────────────────────────────────── */
+
+.pf-blocked-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.52);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 18px;
+    pointer-events: none;
+}
+
+.pf-blocked-overlay i {
+    font-size: 2rem;
+    color: #ef4444;
+}
+
+.pf-blocked-overlay span {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: #ef4444;
+}
+
+
+/* ──────────────────────────────────────────────────────────
+   ADD NEW CARD TILE
+   ────────────────────────────────────────────────────────── */
+
+.pf-add-card-tile {
+    min-height: 190px;
+    border-radius: 18px;
+    border: 2px dashed #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    background: transparent;
+}
+
+.pf-add-card-tile:hover {
+    border-color: #2563eb;
+    background: rgba(37, 99, 235, 0.04);
+}
+
+.pf-add-card-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid #cbd5e1;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 1.15rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0;
+}
+
+.pf-add-card-tile:hover .pf-add-card-btn {
+    border-color: #2563eb;
+    color: #2563eb;
+}
+
+.pf-add-card-label {
+    font-size: 0.875rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   DARK MODALS
+   ══════════════════════════════════════════════════════════ */
+
+/* Backdrop */
+.pf-modal-backdrop {
+    display: none;
     position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 100;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 1050;
+    align-items: center;
+    justify-content: center;
+    animation: pfFadeIn 0.18s ease-out;
+}
+
+.pf-modal-backdrop.is-open {
+    display: flex;
+}
+
+@keyframes pfFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* Modal panel */
+.pf-modal {
+    background: #1e2535;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    width: 100%;
+    max-width: 440px;
+    margin: 1rem;
+    box-shadow: 0 28px 64px rgba(0, 0, 0, 0.65);
+    animation: pfSlideUp 0.22s ease-out;
+}
+
+.pf-modal--sm {
+    max-width: 390px;
+}
+
+@keyframes pfSlideUp {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Header */
+.pf-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.pf-modal-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+.pf-modal-close {
+    background: rgba(255, 255, 255, 0.07);
+    border: none;
+    color: #94a3b8;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.78rem;
+    transition: background 0.15s, color 0.15s;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.pf-modal-close:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+/* Body */
+.pf-modal-body {
+    padding: 22px;
+    color: #cbd5e1;
+}
+
+/* Footer */
+.pf-modal-footer {
+    padding: 14px 22px 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Icon badge */
+.pf-modal-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.55rem;
+    margin: 0 auto 18px;
+}
+
+.pf-modal-icon--warning { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.pf-modal-icon--success { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+
+.pf-modal-desc,
+.pf-modal-hint {
+    text-align: center;
+    font-size: 0.875rem;
+    color: #94a3b8;
+    line-height: 1.65;
+    margin: 0;
+}
+
+/* ── Form elements ── */
+.pf-form-group {
     display: flex;
     flex-direction: column;
 }
 
-.sidebar-nav {
-    flex-grow: 1;
-}
-
-.sidebar-nav .nav-link {
-    color: var(--text-muted);
-    padding: 0.5rem 0.75rem;
-    border-radius: 8px;
-    margin: 0.15rem 0;
+.pf-form-label {
+    font-size: 0.8125rem;
     font-weight: 500;
-    font-size: 0.875rem;
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    transition: all 0.2s;
-    text-decoration: none;
+    color: #94a3b8;
+    margin-bottom: 7px;
 }
 
-.sidebar-nav .nav-link:hover {
-    background-color: #f1f5f9;
-    color: var(--primary);
+.pf-input {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    color: #f1f5f9;
+    padding: 10px 14px;
+    font-size: 0.9375rem;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
 }
 
-.sidebar-nav .nav-link.active {
-    background-color: var(--primary);
-    color: white;
+.pf-input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.22);
 }
 
-.sidebar-nav .nav-link i {
-    width: 18px;
+.pf-input::placeholder {
+    color: rgba(255, 255, 255, 0.22);
+}
+
+/* PIN field — large centred digits */
+.pf-pin-input {
     text-align: center;
-    font-size: 1rem;
+    letter-spacing: 0.55em;
+    font-size: 1.25rem;
+    padding: 12px 44px 12px 14px;
 }
 
-.main-content {
-    margin-left: 210px;
-    min-height: 100vh;
-    background-color: var(--background);
-    flex: 1;
-    width: calc(100% - 210px);
-    min-width: 0;
-}
-
-/* Stat Cards */
-.stat-card {
-    padding: 1.5rem;
-    border-radius: var(--radius);
-    background: white;
-    border: 1px solid var(--border);
-    transition: all 0.3s;
-    height: 100%;
-}
-
-.stat-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    transform: translateY(-2px);
-}
-
-.stat-card-icon {
-    width: 3rem;
-    height: 3rem;
-    border-radius: 12px;
+/* Wrapper for PIN field + eye toggle */
+.pf-pin-wrap {
+    position: relative;
     display: flex;
     align-items: center;
-    justify-content: center;
-    background-color: rgba(37, 99, 235, 0.1);
-    color: var(--primary);
-    flex-shrink: 0;
 }
 
-.stat-card-label {
-    font-size: 0.875rem;
-    color: var(--text-muted);
-    margin-bottom: 0.25rem;
-    font-weight: 500;
+.pf-pin-wrap .pf-input { padding-right: 40px; }
+
+.pf-eye-btn {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    font-size: 0.88rem;
+    padding: 4px;
+    transition: color 0.15s;
+    display: flex;
+    align-items: center;
 }
 
-.stat-card-value {
-    font-size: 1.875rem;
-    font-weight: 700;
-    color: #1e293b;
-    line-height: 1;
+.pf-eye-btn:hover { color: #94a3b8; }
+
+/* Wrapper for $ prefix */
+.pf-prefix-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
 }
 
-/* Account Cards */
-.account-card {
-    padding: 1.5rem;
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    background: white;
-    transition: all 0.3s;
-    height: 100%;
+.pf-prefix {
+    position: absolute;
+    left: 13px;
+    color: #64748b;
+    font-size: 0.9375rem;
+    pointer-events: none;
 }
 
-.account-card:hover {
-    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-    transform: translateY(-2px);
-}
+.pf-input--prefixed { padding-left: 26px; }
 
-.account-number {
-    font-family: 'Courier New', monospace;
-    color: var(--text-muted);
-    font-size: 0.875rem;
-    margin-bottom: 0.5rem;
-}
+/* Remove number input arrows */
+.pf-input[type="number"]::-webkit-inner-spin-button,
+.pf-input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+.pf-input[type="number"] { -moz-appearance: textfield; }
 
-.account-balance {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #1e293b;
-    margin-bottom: 1.5rem;
-}
-
-/* Tables */
-.table {
+/* Error message */
+.pf-error-msg {
+    color: #ef4444;
+    font-size: 0.8125rem;
+    margin-top: 8px;
     margin-bottom: 0;
 }
 
-.table thead th {
-    border-top: none;
-    border-bottom: 1px solid var(--border);
-    padding: 1rem;
-    font-size: 0.8125rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.table tbody tr {
-    border-bottom: 1px solid var(--border);
-    transition: background-color 0.2s;
-}
-
-.table tbody tr:last-child {
-    border-bottom: none;
-}
-
-.table tbody tr:hover {
-    background-color: #f8fafc;
-}
-
-.table td {
-    padding: 1rem;
-    vertical-align: middle;
-}
-
-/* Forms */
-.form-control,
-.form-select {
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    padding: 0.625rem 1rem;
-    transition: all 0.2s;
-}
-
-.form-control:focus,
-.form-select:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-    outline: none;
-}
-
-.form-label {
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-    color: #334155;
-    font-size: 0.875rem;
-}
-
-/* Badges */
-.badge {
-    padding: 0.375rem 0.75rem;
-    border-radius: 6px;
-    font-weight: 500;
-    font-size: 0.75rem;
-}
-
-/* Modals */
-.modal-content {
-    border-radius: var(--radius);
+/* ── Buttons ── */
+.pf-btn {
     border: none;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-.modal-header {
-    border-bottom: 1px solid var(--border);
-    padding: 1.25rem 1.5rem;
-}
-
-.modal-body {
-    padding: 1.5rem;
-}
-
-.modal-footer {
-    border-top: 1px solid var(--border);
-    padding: 1rem 1.5rem;
-}
-
-.modal-title {
+    border-radius: 10px;
+    padding: 9px 20px;
+    font-size: 0.875rem;
     font-weight: 600;
-    font-size: 1.125rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: opacity 0.2s, transform 0.15s, background 0.2s;
+    white-space: nowrap;
 }
 
-/* Dropdowns */
-.dropdown-menu {
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    padding: 0.5rem;
+.pf-btn:active { transform: scale(0.97); }
+.pf-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.pf-btn--ghost   { background: rgba(255,255,255,0.07); color: #94a3b8; }
+.pf-btn--ghost:hover { background: rgba(255,255,255,0.12); color: #e2e8f0; }
+
+.pf-btn--primary { background: #2563eb; color: #fff; }
+.pf-btn--primary:hover { background: #1d4ed8; }
+
+.pf-btn--warning { background: #f59e0b; color: #fff; }
+.pf-btn--warning:hover { background: #d97706; }
+
+.pf-btn--success { background: #10b981; color: #fff; }
+.pf-btn--success:hover { background: #059669; }
+
+.pf-btn--info    { background: #06b6d4; color: #fff; }
+.pf-btn--info:hover { background: #0891b2; }
+
+/* Loading spinner */
+.pf-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: pfSpin 0.65s linear infinite;
+    display: inline-block;
+    flex-shrink: 0;
 }
 
-.dropdown-item {
-    border-radius: 6px;
-    padding: 0.625rem 1rem;
-    transition: all 0.2s;
-}
-
-.dropdown-item:hover {
-    background-color: #f1f5f9;
-}
-
-.dropdown-item i {
-    width: 20px;
-    text-align: center;
-}
-
-/* Responsive */
-@media (max-width: 991px) {
-    .sidebar {
-        transform: translateX(-100%);
-        transition: transform 0.3s;
-    }
-
-    .sidebar.show {
-        transform: translateX(0);
-    }
-
-    .main-content {
-        margin-left: 0;
-    }
-
-    h1 { font-size: 1.75rem; }
-    h2 { font-size: 1.25rem; }
-
-    .stat-card-value {
-        font-size: 1.5rem;
-    }
-
-    .account-balance {
-        font-size: 1.75rem;
-    }
-}
-
-@media (max-width: 576px) {
-    .stat-card-value {
-        font-size: 1.25rem;
-    }
-
-    .account-balance {
-        font-size: 1.5rem;
-    }
-}
-
-/* Utilities */
-.text-primary { color: var(--primary) !important; }
-.text-success { color: var(--success) !important; }
-.text-danger { color: var(--danger) !important; }
-.text-muted { color: var(--text-muted) !important; }
-
-.bg-muted { background-color: var(--background) !important; }
-
-.shadow-sm { box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-.shadow { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-.shadow-lg { box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
-
-.rounded-lg { border-radius: var(--radius); }
-.rounded-xl { border-radius: 1rem; }
-.rounded-full { border-radius: 9999px; }
-
-/* Toast Notifications */
-.toast {
-    border-radius: var(--radius);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-/* Button Groups */
-.btn-group .btn {
-    border-radius: 0;
-}
-
-.btn-group .btn:first-child {
-    border-top-left-radius: 8px;
-    border-bottom-left-radius: 8px;
-}
-
-.btn-group .btn:last-child {
-    border-top-right-radius: 8px;
-    border-bottom-right-radius: 8px;
-}
-
-/* Smooth scrolling */
-html {
-    scroll-behavior: smooth;
-}
-
-/* Selection */
-::selection {
-    background-color: rgba(37, 99, 235, 0.2);
-    color: #1e293b;
-
-    /* =========================================
-   FIXED SIDEBAR LAYOUT (Додано для PayFlow)
-   ========================================= */
-
-    /* 1. ЛІВА ПАНЕЛЬ (SIDEBAR) */
-    .sidebar {
-        position: fixed !important;  /* Фіксуємо на місці */
-        top: 0;
-        left: 0;
-        bottom: 0;                   /* Розтягуємо на всю висоту */
-        height: 100vh;
-        width: 260px;                /* Фіксована ширина */
-        background-color: #fff;      /* Білий фон обов'язково */
-        border-right: 1px solid #e5e7eb;
-        z-index: 50;                 /* Щоб було поверх контенту */
-
-        /* Flexbox для вирівнювання (меню зверху, логаут знизу) */
-        display: flex;
-        flex-direction: column;
-        padding-bottom: 20px;
-    }
-
-    /* 2. ОСНОВНИЙ КОНТЕНТ (MAIN) */
-    .main-content {
-        margin-left: 260px !important;    /* Відступаємо вправо на ширину меню */
-        width: calc(100% - 260px) !important; /* Ширина решти екрану */
-        min-height: 100vh;
-        position: relative;
-    }
-
-    /* 3. АДАПТИВНІСТЬ (Мобільні пристрої) */
-    /* На екранах менше 1024px (планшети і телефони) */
-    @media (max-width: 1024px) {
-        .sidebar {
-            display: none !important; /* Ховаємо бічне меню */
-        }
-
-        .main-content {
-            margin-left: 0 !important; /* Прибираємо відступ */
-            width: 100% !important;
-        }
-    }
+@keyframes pfSpin {
+    to { transform: rotate(360deg); }
 }
