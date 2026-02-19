@@ -408,28 +408,45 @@ public class AdminController {
         if (isNotAuthenticated(session)) return "redirect:/admin/login";
 
         User admin = (User) session.getAttribute("adminUser");
-        Optional<User> userOpt = userRepository.findById(admin.getId());
-        if (userOpt.isEmpty()) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Admin account not found");
+
+        // Validate input lengths to match entity constraints before hitting DB
+        if (firstName.trim().length() < 2 || firstName.trim().length() > 50) {
+            redirectAttributes.addFlashAttribute("errorMessage", "First name must be between 2 and 50 characters");
+            return "redirect:/admin/settings";
+        }
+        if (lastName.trim().length() < 2 || lastName.trim().length() > 50) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Last name must be between 2 and 50 characters");
             return "redirect:/admin/settings";
         }
 
-        User user = userOpt.get();
-        // Check if email is already taken by another user
+        // Check email uniqueness
         boolean emailTaken = userRepository.findAll().stream()
                 .anyMatch(u -> u.getEmail().equalsIgnoreCase(email.trim())
-                        && !u.getId().equals(user.getId()));
+                        && !u.getId().equals(admin.getId()));
         if (emailTaken) {
             redirectAttributes.addFlashAttribute("errorMessage", "Email address is already in use by another account");
             return "redirect:/admin/settings";
         }
 
-        user.setFirstName(firstName.trim());
-        user.setLastName(lastName.trim());
-        user.setEmail(email.trim());
-        userRepository.save(user);
-        session.setAttribute("adminUser", user); // update session
-        redirectAttributes.addFlashAttribute("successMessage", "Profile updated successfully");
+        // Use @Modifying @Query — bypasses Hibernate Bean Validation on the full entity
+        // This avoids ConstraintViolationException caused by other fields failing their constraints
+        // during a full-entity save() when only profile fields changed.
+        int updated = userRepository.updateProfile(
+                admin.getId(),
+                firstName.trim(),
+                lastName.trim(),
+                email.trim(),
+                java.time.LocalDateTime.now()
+        );
+
+        if (updated > 0) {
+            // Refresh session from DB so topbar reflects new name immediately
+            userRepository.findById(admin.getId())
+                    .ifPresent(fresh -> session.setAttribute("adminUser", fresh));
+            redirectAttributes.addFlashAttribute("successMessage", "Profile updated successfully");
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "Update failed — admin account not found");
+        }
         return "redirect:/admin/settings";
     }
 
@@ -452,19 +469,29 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("errorMessage", "Current password is incorrect");
             return "redirect:/admin/settings";
         }
-        if (newPassword.length() < 6) {
+        if (newPassword.trim().length() < 6) {
             redirectAttributes.addFlashAttribute("errorMessage", "New password must be at least 6 characters");
             return "redirect:/admin/settings";
         }
-        if (currentPassword.equals(newPassword)) {
+        if (currentPassword.equals(newPassword.trim())) {
             redirectAttributes.addFlashAttribute("errorMessage", "New password must be different from the current one");
             return "redirect:/admin/settings";
         }
 
-        user.setPassword(newPassword);
-        userRepository.save(user);
-        session.setAttribute("adminUser", user);
-        redirectAttributes.addFlashAttribute("successMessage", "Password updated successfully");
+        // Same approach — direct query, no full-entity validation
+        int updated = userRepository.updatePassword(
+                admin.getId(),
+                newPassword.trim(),
+                java.time.LocalDateTime.now()
+        );
+
+        if (updated > 0) {
+            userRepository.findById(admin.getId())
+                    .ifPresent(fresh -> session.setAttribute("adminUser", fresh));
+            redirectAttributes.addFlashAttribute("successMessage", "Password updated successfully");
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "Update failed — admin account not found");
+        }
         return "redirect:/admin/settings";
     }
 

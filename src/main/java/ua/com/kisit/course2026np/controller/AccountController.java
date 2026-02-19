@@ -13,12 +13,12 @@ import ua.com.kisit.course2026np.entity.AccountStatus;
 import ua.com.kisit.course2026np.entity.CreditCard;
 import ua.com.kisit.course2026np.entity.Payment;
 import ua.com.kisit.course2026np.entity.User;
-import ua.com.kisit.course2026np.entity.UserRole;
 import ua.com.kisit.course2026np.repository.CreditCardRepository;
 import ua.com.kisit.course2026np.repository.UserRepository;
 import ua.com.kisit.course2026np.service.AccountService;
 import ua.com.kisit.course2026np.service.PaymentService;
 
+import jakarta.servlet.http.HttpSession;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Random;
@@ -43,10 +43,14 @@ public class AccountController {
     @PostMapping("/create")
     public String createAccountWeb(
             @RequestParam String accountType,
+            HttpSession session,
             RedirectAttributes redirectAttributes
     ) {
         try {
-            User user = getDemoUser();
+            Long userId = (Long) session.getAttribute("userId");
+            if (userId == null) return "redirect:/login";
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new IllegalStateException("User not found"));
 
             // Знаходимо першу активну картку користувача
             List<CreditCard> userCards = creditCardRepository.findByUser(user);
@@ -216,15 +220,7 @@ public class AccountController {
         return accountNumber.toString();
     }
 
-    /**
-     * Отримати демо-користувача
-     */
-    private User getDemoUser() {
-        return userRepository.findAll().stream()
-                .filter(u -> u.getRole() == UserRole.CLIENT)
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("User not found"));
-    }
+
 
     // ============= REST API ENDPOINTS (для майбутнього використання) =============
 

@@ -116,11 +116,30 @@ public class PaymentService {
         recipient.setBalance(recipient.getBalance().add(payment.getAmount()));
         accountRepository.save(recipient);
 
+        // Запис для відправника (TRANSFER — списання)
         payment.setAccount(sender);
         payment.setSenderAccount(sender.getAccountNumber());
         payment.setRecipientAccount(recipient.getAccountNumber());
         payment.complete();
-        return paymentRepository.save(payment);
+        paymentRepository.save(payment);
+
+        // Окремий запис для отримувача (REPLENISHMENT — зарахування)
+        // Без цього у отримувача транзакція не відображається в списку
+        Payment incomingPayment = Payment.builder()
+                .account(recipient)
+                .amount(payment.getAmount())
+                .type(PaymentType.REPLENISHMENT)
+                .status(PaymentStatus.COMPLETED)
+                .description("Transfer from " + sender.getAccountNumber()
+                        + (payment.getDescription() != null && !payment.getDescription().isBlank()
+                        ? ": " + payment.getDescription() : ""))
+                .senderAccount(sender.getAccountNumber())
+                .recipientAccount(recipient.getAccountNumber())
+                .build();
+        incomingPayment.complete();
+        paymentRepository.save(incomingPayment);
+
+        return payment;
     }
 
     // ============= READ METHODS =============
