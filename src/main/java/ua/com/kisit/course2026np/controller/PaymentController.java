@@ -286,6 +286,47 @@ public class PaymentController {
         return ResponseEntity.ok(count);
     }
 
+
+    // ============= AJAX: валідація рахунку отримувача =============
+
+    /**
+     * GET /api/accounts/validate?number=452184...
+     * Повертає інформацію про власника рахунку для UI підтвердження
+     */
+    @GetMapping("/api/accounts/validate")
+    @ResponseBody
+    public ResponseEntity<AccountValidationResponse> validateAccount(
+            @RequestParam String number,
+            HttpSession session
+    ) {
+        if (number == null || number.isBlank()) {
+            return ResponseEntity.ok(new AccountValidationResponse(false, null, null, null));
+        }
+
+        User currentUser = getCurrentUser(session);
+
+        return accountService.getAccountByNumber(number.trim())
+                .map(account -> {
+                    String acctNum = account.getAccountNumber();
+                    String masked = "****" + acctNum.substring(Math.max(0, acctNum.length() - 4));
+
+                    String ownerName = "Unknown";
+                    if (account.getCreditCard() != null && account.getCreditCard().getUser() != null) {
+                        User owner = account.getCreditCard().getUser();
+                        String lastName = owner.getLastName();
+                        ownerName = owner.getFirstName() + " "
+                                + (lastName != null && !lastName.isEmpty() ? lastName.charAt(0) + "." : "");
+                        if (owner.getId().equals(currentUser.getId())) {
+                            ownerName = "Ваш рахунок";
+                        }
+                    }
+
+                    String status = account.getStatus() != null ? account.getStatus().name() : "UNKNOWN";
+                    return ResponseEntity.ok(new AccountValidationResponse(true, ownerName, masked, status));
+                })
+                .orElse(ResponseEntity.ok(new AccountValidationResponse(false, null, null, null)));
+    }
+
     // ============= DTO CLASSES =============
 
     @Setter
@@ -301,5 +342,21 @@ public class PaymentController {
         private Long accountId;                 // sender account ID
         private String recipientAccountNumber;  // recipient account number
         private Payment payment;                // amount, description, type, etc.
+    }
+
+    @Getter
+    @Setter
+    public static class AccountValidationResponse {
+        private boolean valid;
+        private String ownerName;
+        private String maskedNumber;
+        private String status;
+
+        public AccountValidationResponse(boolean valid, String ownerName, String maskedNumber, String status) {
+            this.valid = valid;
+            this.ownerName = ownerName;
+            this.maskedNumber = maskedNumber;
+            this.status = status;
+        }
     }
 }

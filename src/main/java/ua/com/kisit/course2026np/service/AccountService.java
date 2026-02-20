@@ -294,4 +294,37 @@ public class AccountService {
 
         return account.getStatus() == AccountStatus.BLOCKED;
     }
+
+    // ============= ЛІМІТИ ТРАНЗАКЦІЙ (хардкод) =============
+
+    public static final BigDecimal MAX_SINGLE_TRANSFER = new BigDecimal("50000.00");
+    public static final BigDecimal MAX_SINGLE_PAYMENT  = new BigDecimal("10000.00");
+    public static final BigDecimal MAX_SINGLE_TOPUP    = new BigDecimal("100000.00");
+
+    /**
+     * Перевірка ліміту однієї транзакції.
+     * Кидає IllegalArgumentException якщо перевищено.
+     */
+    public void checkTransactionLimit(BigDecimal amount, String type) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Сума має бути більше нуля");
+        }
+        switch (type.toUpperCase()) {
+            case "TRANSFER" -> {
+                if (amount.compareTo(MAX_SINGLE_TRANSFER) > 0)
+                    throw new IllegalArgumentException(
+                            "Сума переказу перевищує ліміт $" + MAX_SINGLE_TRANSFER.toPlainString());
+            }
+            case "PAYMENT" -> {
+                if (amount.compareTo(MAX_SINGLE_PAYMENT) > 0)
+                    throw new IllegalArgumentException(
+                            "Сума платежу перевищує ліміт $" + MAX_SINGLE_PAYMENT.toPlainString());
+            }
+            case "REPLENISHMENT" -> {
+                if (amount.compareTo(MAX_SINGLE_TOPUP) > 0)
+                    throw new IllegalArgumentException(
+                            "Сума поповнення перевищує ліміт $" + MAX_SINGLE_TOPUP.toPlainString());
+            }
+        }
+    }
 }

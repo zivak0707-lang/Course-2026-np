@@ -28,6 +28,17 @@
         .type-radio.replenishment:checked + .type-label { border-color: #10b981; background: #ecfdf5; color: #065f46; }
         .type-radio.transfer:checked + .type-label { border-color: #8b5cf6; background: #f5f3ff; color: #5b21b6; }
 
+        /* Transfer sub-type radio */
+        .sub-radio { display: none; }
+        .sub-label {
+            display: flex; align-items: center; gap: 8px; padding: 9px 14px;
+            border-radius: 8px; cursor: pointer; font-size: .85rem; font-weight: 500;
+            color: #6b7280; background: #f9fafb; border: 1.5px solid #e5e7eb;
+            transition: all .15s; user-select: none; flex: 1;
+        }
+        .sub-label:hover { border-color: #c4b5fd; color: #7c3aed; background: #f5f3ff; }
+        .sub-radio:checked + .sub-label { border-color: #8b5cf6; background: #f5f3ff; color: #6d28d9; }
+
         .amount-input {
             font-size: 1.5rem; font-weight: 700; padding-left: 2rem;
             border: 1.5px solid #e5e7eb; border-radius: 8px;
@@ -44,6 +55,8 @@
         }
         .pay-input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.1); background: #fff; }
         .pay-input:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; border-style: dashed; }
+        .pay-input.valid { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,.08); }
+        .pay-input.invalid { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,.08); }
 
         .pay-select {
             width: 100%; padding: 10px 14px; font-size: .9rem; font-weight: 500;
@@ -52,7 +65,6 @@
             transition: border-color .15s, box-shadow .15s; outline: none;
         }
         .pay-select:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.1); background: #fff; }
-        .pay-select:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
 
         .btn-submit {
             width: 100%; padding: 13px; border-radius: 8px; border: none;
@@ -66,11 +78,65 @@
         .btn-submit:disabled { opacity: .55; cursor: not-allowed; transform: none; box-shadow: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .spin { animation: spin .7s linear infinite; }
+
+        /* Confirmation Modal */
+        #confirmModal {
+            display: none; position: fixed; inset: 0; z-index: 50;
+            background: rgba(0,0,0,.45); backdrop-filter: blur(2px);
+            align-items: center; justify-content: center;
+        }
+        #confirmModal.open { display: flex; }
+        @keyframes modalIn { from { opacity:0; transform: scale(.95) translateY(10px); } to { opacity:1; transform: scale(1) translateY(0); } }
+        #confirmModalBox { animation: modalIn .2s ease-out; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
-<div class="flex min-h-screen w-full">
 
+<!-- ══════════════════════ CONFIRMATION MODAL ══════════════════════ -->
+<div id="confirmModal">
+    <div id="confirmModalBox" class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+        <div id="modalHeader" class="bg-gradient-to-br from-blue-700 to-blue-500 px-6 py-5 text-white">
+            <div class="flex items-center gap-2 mb-1">
+                <i data-lucide="shield-check" class="h-5 w-5 opacity-80"></i>
+                <p class="text-xs font-semibold uppercase tracking-widest opacity-75">Підтвердження</p>
+            </div>
+            <p class="text-2xl font-extrabold" id="modalAmount">$0.00</p>
+            <p class="text-xs opacity-70 mt-0.5" id="modalAmountLabel">Загальна сума</p>
+        </div>
+        <div class="px-6 py-5 space-y-3">
+            <div class="flex justify-between text-sm border-b border-dashed border-gray-100 pb-3">
+                <span class="text-gray-500">Тип операції</span>
+                <span class="font-semibold text-gray-800" id="modalType">—</span>
+            </div>
+            <div class="flex justify-between text-sm border-b border-dashed border-gray-100 pb-3">
+                <span class="text-gray-500">Отримувач</span>
+                <span class="font-semibold text-gray-800 text-right" id="modalRecipient">—</span>
+            </div>
+            <div class="flex justify-between text-sm border-b border-dashed border-gray-100 pb-3" id="modalFeeRow">
+                <span class="text-gray-500">Комісія (1.5%)</span>
+                <span class="font-semibold text-amber-600" id="modalFee">$0.00</span>
+            </div>
+            <div class="flex justify-between text-sm">
+                <span class="font-bold text-gray-900">Разом</span>
+                <span class="font-extrabold text-blue-700 text-base" id="modalTotal">$0.00</span>
+            </div>
+            <div class="rounded-lg bg-amber-50 border border-amber-100 px-3 py-2.5 flex items-start gap-2 text-xs text-amber-700 mt-2">
+                <i data-lucide="triangle-alert" class="h-3.5 w-3.5 flex-shrink-0 mt-0.5"></i>
+                <span>Операцію не можна скасувати після підтвердження.</span>
+            </div>
+        </div>
+        <div class="px-6 pb-5 flex gap-3">
+            <button onclick="closeModal()" class="flex-1 py-2.5 rounded-lg border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+                Скасувати
+            </button>
+            <button id="modalConfirmBtn" onclick="submitForm()" class="flex-1 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                <i data-lucide="check" class="h-4 w-4"></i> Підтвердити
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="flex min-h-screen w-full">
     <!-- SIDEBAR -->
     <aside class="hidden lg:flex flex-col border-r border-gray-200 bg-white px-6 py-6 w-64 fixed h-full z-20 top-0 left-0">
         <div class="mb-8 flex items-center gap-2 px-2">
@@ -126,7 +192,6 @@
             </#if>
 
             <div class="grid lg:grid-cols-3 gap-6">
-
                 <!-- FORM -->
                 <div class="lg:col-span-2">
                     <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -178,7 +243,7 @@
                                 </#if>
                             </div>
 
-                            <!-- 2. Operation type — тепер 3 варіанти -->
+                            <!-- 2. Operation type -->
                             <div>
                                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                                     Operation type <span class="text-red-500">*</span>
@@ -209,11 +274,10 @@
                                 </p>
                             </div>
 
-                            <!-- Єдиний hidden input що реально відправляється на сервер -->
-                            <!-- JS сам заповнює його перед submit залежно від типу операції -->
+                            <!-- Hidden input що реально відправляється на сервер -->
                             <input type="hidden" id="recipientAccountHidden" name="recipientAccount" value="">
 
-                            <!-- 3a. Для PAYMENT: текстове поле (без name — щоб не дублювалось) -->
+                            <!-- 3a. PAYMENT: текстове поле -->
                             <div id="recipientSection">
                                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2" for="recipientInput">
                                     Recipient account <span class="text-red-500">*</span>
@@ -221,27 +285,88 @@
                                 <input type="text" id="recipientInput"
                                        class="pay-input" placeholder="Enter account number"
                                        maxlength="255" oninput="updateSummary()">
-                                <p class="mt-1.5 text-xs text-gray-400">e.g. UA123456789012345678</p>
+                                <p class="mt-1.5 text-xs text-gray-400">e.g. 452184...</p>
                             </div>
 
-                            <!-- 3b. Для TRANSFER: текстове поле для будь-якого номера рахунку -->
-                            <div id="transferSection" class="hidden">
-                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                                    To account <span class="text-red-500">*</span>
-                                </label>
-                                <input type="text" id="transferToInput"
-                                       class="pay-input" placeholder="Enter recipient account number"
-                                       maxlength="255" oninput="onTransferInputChange(this)">
-                                <p class="mt-1.5 text-xs text-purple-500 flex items-center gap-1">
-                                    <i data-lucide="info" class="h-3.5 w-3.5"></i>
-                                    Enter account number of any PayFlow user — no fee
-                                </p>
+                            <!-- 3b. TRANSFER: підтипи + відповідні поля -->
+                            <div id="transferSection" class="hidden space-y-4">
+                                <!-- Sub-type selector -->
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                                        Transfer type
+                                    </label>
+                                    <div class="flex gap-2">
+                                        <input type="radio" name="transferSubType" id="subMyAccounts" value="my" class="sub-radio" checked onchange="onSubTypeChange()">
+                                        <label for="subMyAccounts" class="sub-label">
+                                            <i data-lucide="user" class="h-4 w-4"></i> My accounts
+                                        </label>
+                                        <input type="radio" name="transferSubType" id="subOtherUser" value="other" class="sub-radio" onchange="onSubTypeChange()">
+                                        <label for="subOtherUser" class="sub-label">
+                                            <i data-lucide="users" class="h-4 w-4"></i> Another user
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- My accounts: dropdown -->
+                                <div id="myAccountsSection">
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                                        To account <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="relative">
+                                        <select id="myAccountsSelect" class="pay-select pr-10" onchange="onMyAccountSelect(this)">
+                                            <option value="">— Select destination account —</option>
+                                            <#if accounts?? && accounts?size gt 0>
+                                            <#list accounts as acc>
+                                                <option value="${acc.accountNumber}" data-id="${acc.id?c}" data-name="${acc.accountName!'Account'}">
+                                                    ${acc.accountName!"Account"} · ****${acc.accountNumber?substring(acc.accountNumber?length - 4)} · $${acc.balance?string("#,##0.00")}
+                                                </option>
+                                            </#list>
+                                            </#if>
+                                        </select>
+                                        <div class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                            <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                                        </div>
+                                    </div>
+                                    <p class="mt-1.5 text-xs text-purple-500 flex items-center gap-1">
+                                        <i data-lucide="info" class="h-3.5 w-3.5"></i> Transfer between your own accounts — no fee
+                                    </p>
+                                </div>
+
+                                <!-- Another user: text input + Ajax validation -->
+                                <div id="otherUserSection" class="hidden">
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                                        Recipient account number <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="relative">
+                                        <input type="text" id="externalAccountInput"
+                                               class="pay-input pr-10" placeholder="Enter account number"
+                                               maxlength="255" oninput="onExternalAccountInput(this)">
+                                        <div id="validationSpinner" class="hidden absolute right-3 top-1/2 -translate-y-1/2">
+                                            <svg class="spin h-4 w-4 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <!-- Validation result card -->
+                                    <div id="validationResult" class="hidden mt-2 rounded-lg px-3 py-2.5 flex items-center gap-2.5 text-sm border">
+                                        <div id="validationIcon" class="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"></div>
+                                        <div class="flex-1">
+                                            <p id="validationOwner" class="font-semibold text-gray-800 text-sm"></p>
+                                            <p id="validationNumber" class="text-xs text-gray-400 mt-0.5"></p>
+                                        </div>
+                                        <div id="validationBadge" class="text-xs font-bold px-2 py-0.5 rounded-full"></div>
+                                    </div>
+                                    <p class="mt-1.5 text-xs text-purple-500 flex items-center gap-1">
+                                        <i data-lucide="info" class="h-3.5 w-3.5"></i> Transfer to any PayFlow user — no fee
+                                    </p>
+                                </div>
                             </div>
 
                             <!-- 4. Amount -->
                             <div>
                                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2" for="amountInput">
                                     Amount <span class="text-red-500">*</span>
+                                    <span id="limitHint" class="ml-2 font-normal normal-case text-gray-400 text-[11px]"></span>
                                 </label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg pointer-events-none">$</span>
@@ -251,6 +376,10 @@
                                            step="0.01" min="0.01" required
                                            oninput="updateSummary(); validateBalance()">
                                 </div>
+                                <p id="limitErrorMsg" class="hidden mt-1.5 text-xs font-semibold text-red-600 flex items-center gap-1">
+                                    <i data-lucide="alert-circle" class="h-3.5 w-3.5"></i>
+                                    <span id="limitErrorText"></span>
+                                </p>
                             </div>
 
                             <!-- 5. Description -->
@@ -266,7 +395,8 @@
                                 </div>
                             </div>
 
-                            <button type="submit" id="submitBtn" class="btn-submit" <#if !accounts?? || accounts?size == 0>disabled</#if>>
+                            <button type="button" id="submitBtn" onclick="openModal()"
+                                    class="btn-submit" <#if !accounts?? || accounts?size == 0>disabled</#if>>
                                 <i data-lucide="send" class="h-4 w-4" id="btnIcon"></i>
                                 <span id="btnText">Send Payment</span>
                             </button>
@@ -284,7 +414,7 @@
                             <p class="text-xs opacity-70 mt-1" id="summarySubtitle">Total to pay</p>
                         </div>
                         <div class="px-5 py-4 space-y-3">
-                            <div class="flex items-center justify-between text-sm" id="summaryRecipientRow">
+                            <div class="flex items-center justify-between text-sm">
                                 <span class="text-gray-500">Recipient</span>
                                 <span class="font-semibold text-gray-800 text-right max-w-[130px] truncate" id="summaryRecipient">—</span>
                             </div>
@@ -309,6 +439,29 @@
                             <div class="rounded-lg bg-gray-50 px-3 py-2.5 flex items-start gap-2 text-xs text-gray-500">
                                 <i data-lucide="shield-check" class="h-3.5 w-3.5 text-emerald-500 flex-shrink-0 mt-0.5"></i>
                                 <span>All transactions are secured and saved to the database.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Limits info card -->
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                        <div class="px-5 pt-4 pb-2 border-b border-gray-100">
+                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                                <i data-lucide="gauge" class="h-3.5 w-3.5"></i> Transaction Limits
+                            </p>
+                        </div>
+                        <div class="px-5 py-3 space-y-2 text-xs text-gray-600">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Payment max</span>
+                                <span class="font-semibold">$10,000</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Transfer max</span>
+                                <span class="font-semibold">$50,000</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Top Up max</span>
+                                <span class="font-semibold">$100,000</span>
                             </div>
                         </div>
                     </div>
@@ -350,7 +503,6 @@
                     </div>
                     </#if>
                 </div>
-
             </div>
         </div>
     </main>
@@ -359,23 +511,28 @@
 <script>
     if (window.lucide) window.lucide.createIcons();
 
+    // ── Ліміти (мають відповідати AccountService) ─────────────────────
+    const LIMITS = { PAYMENT: 10000, TRANSFER: 50000, REPLENISHMENT: 100000 };
+
     let currentBalance = 0;
     let currentAccountId = null;
+    let validationTimer = null;
+    let externalAccountValid = false;
+    let externalAccountOwner = '—';
 
     // ── Вибір рахунку відправника ──────────────────────────────────────
     function onAccountChange(select) {
         const opt = select.options[select.selectedIndex];
         const block = document.getElementById('balanceBlock');
         const val   = document.getElementById('balanceValue');
-
         if (opt.value) {
-            currentBalance  = parseFloat(opt.dataset.balance) || 0;
+            currentBalance   = parseFloat(opt.dataset.balance) || 0;
             currentAccountId = opt.value;
-            val.textContent = '$' + currentBalance.toFixed(2);
+            val.textContent  = '$' + currentBalance.toFixed(2);
             block.classList.remove('hidden');
+            refreshMyAccountsDropdown(opt.dataset.number);
         } else {
-            currentBalance = 0;
-            currentAccountId = null;
+            currentBalance = 0; currentAccountId = null;
             block.classList.add('hidden');
         }
         validateBalance();
@@ -383,11 +540,115 @@
         if (window.lucide) window.lucide.createIcons();
     }
 
-    // ── Введення рахунку отримувача (Transfer) ────────────────────────
-    function onTransferInputChange(input) {
-        const hidden = document.getElementById('recipientAccountHidden');
-        hidden.value = input.value.trim();
+    // Прибираємо з "My accounts" dropdown поточний рахунок відправника
+    function refreshMyAccountsDropdown(senderAccountNumber) {
+        const sel = document.getElementById('myAccountsSelect');
+        Array.from(sel.options).forEach(opt => {
+            opt.disabled = (opt.value === senderAccountNumber);
+        });
+        if (sel.options[sel.selectedIndex]?.value === senderAccountNumber) {
+            sel.selectedIndex = 0;
+            document.getElementById('recipientAccountHidden').value = '';
+        }
+    }
+
+    // ── Вибір власного рахунку в Transfer ─────────────────────────────
+    function onMyAccountSelect(select) {
+        const opt = select.options[select.selectedIndex];
+        document.getElementById('recipientAccountHidden').value = opt.value || '';
         updateSummary();
+    }
+
+    // ── Sub-type Transfer (My accounts / Another user) ─────────────────
+    function onSubTypeChange() {
+        const isMy = document.getElementById('subMyAccounts').checked;
+        document.getElementById('myAccountsSection').classList.toggle('hidden', !isMy);
+        document.getElementById('otherUserSection').classList.toggle('hidden', isMy);
+        // Скидаємо hidden
+        document.getElementById('recipientAccountHidden').value = '';
+        externalAccountValid = false;
+        externalAccountOwner = '—';
+        // Скидаємо validation UI
+        const input = document.getElementById('externalAccountInput');
+        if (input) { input.value = ''; input.className = 'pay-input pr-10'; }
+        document.getElementById('validationResult').classList.add('hidden');
+        updateSummary();
+    }
+
+    // ── Ajax валідація зовнішнього рахунку ─────────────────────────────
+    function onExternalAccountInput(input) {
+        const val = input.value.trim();
+        document.getElementById('recipientAccountHidden').value = val;
+        clearTimeout(validationTimer);
+        externalAccountValid = false;
+        externalAccountOwner = '—';
+
+        const result = document.getElementById('validationResult');
+        const spinner = document.getElementById('validationSpinner');
+
+        if (val.length < 6) {
+            result.classList.add('hidden');
+            input.className = 'pay-input pr-10';
+            updateSummary();
+            return;
+        }
+
+        spinner.classList.remove('hidden');
+        validationTimer = setTimeout(async () => {
+            try {
+                const res = await fetch('/api/accounts/validate?number=' + encodeURIComponent(val));
+                const data = await res.json();
+                spinner.classList.add('hidden');
+
+                if (data.valid) {
+                    externalAccountValid = true;
+                    externalAccountOwner = data.ownerName || '—';
+
+                    const isBlocked = data.status === 'BLOCKED';
+                    input.className = isBlocked ? 'pay-input pr-10 invalid' : 'pay-input pr-10 valid';
+
+                    // Show result card
+                    result.classList.remove('hidden');
+                    result.className = isBlocked
+                        ? 'mt-2 rounded-lg px-3 py-2.5 flex items-center gap-2.5 text-sm border bg-red-50 border-red-200'
+                        : 'mt-2 rounded-lg px-3 py-2.5 flex items-center gap-2.5 text-sm border bg-emerald-50 border-emerald-200';
+
+                    const icon = document.getElementById('validationIcon');
+                    icon.textContent = externalAccountOwner.charAt(0).toUpperCase();
+                    icon.className = isBlocked
+                        ? 'flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold bg-red-400'
+                        : 'flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold bg-emerald-500';
+
+                    document.getElementById('validationOwner').textContent = externalAccountOwner;
+                    document.getElementById('validationNumber').textContent = data.maskedNumber || '';
+
+                    const badge = document.getElementById('validationBadge');
+                    if (isBlocked) {
+                        badge.textContent = 'Заблокований';
+                        badge.className = 'text-xs font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-600';
+                        externalAccountValid = false;
+                    } else {
+                        badge.textContent = 'Знайдено ✓';
+                        badge.className = 'text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-600';
+                    }
+                } else {
+                    externalAccountValid = false;
+                    externalAccountOwner = '—';
+                    input.className = 'pay-input pr-10 invalid';
+                    result.classList.remove('hidden');
+                    result.className = 'mt-2 rounded-lg px-3 py-2.5 flex items-center gap-2.5 text-sm border bg-red-50 border-red-200';
+                    document.getElementById('validationIcon').textContent = '?';
+                    document.getElementById('validationIcon').className = 'flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold bg-gray-400';
+                    document.getElementById('validationOwner').textContent = 'Рахунок не знайдено';
+                    document.getElementById('validationNumber').textContent = '';
+                    document.getElementById('validationBadge').textContent = '';
+                }
+            } catch (err) {
+                spinner.classList.add('hidden');
+                console.error('Validation error:', err);
+            }
+            updateSummary();
+        }, 500); // debounce 500ms
     }
 
     // ── Зміна типу операції ────────────────────────────────────────────
@@ -396,20 +657,19 @@
         const isReplenishment = document.getElementById('typeReplenishment').checked;
         const isTransfer      = document.getElementById('typeTransfer').checked;
 
-        const feeRow          = document.getElementById('feeRow');
-        const hintText        = document.getElementById('operationHintText');
+        const feeRow           = document.getElementById('feeRow');
+        const hintText         = document.getElementById('operationHintText');
         const recipientSection = document.getElementById('recipientSection');
         const transferSection  = document.getElementById('transferSection');
         const recipientInput   = document.getElementById('recipientInput');
-        const transferHidden   = document.getElementById('recipientAccountHidden');
         const btnText          = document.getElementById('btnText');
         const summaryHeader    = document.getElementById('summaryHeader');
+        const limitHint        = document.getElementById('limitHint');
 
-        // Скидаємо значення hidden input при зміні типу
-        transferHidden.value = '';
+        document.getElementById('recipientAccountHidden').value = '';
+        hideLimitError();
 
         if (isReplenishment) {
-            // TOP UP: ховаємо recipient, показуємо підказку
             recipientSection.classList.add('hidden');
             transferSection.classList.add('hidden');
             recipientInput.removeAttribute('required');
@@ -418,23 +678,28 @@
             hintText.innerHTML = 'Funds will be added directly to the selected account';
             if (btnText) btnText.textContent = 'Top Up Account';
             summaryHeader.className = 'bg-gradient-to-br from-emerald-700 to-emerald-500 px-5 py-5 text-white';
+            if (limitHint) limitHint.textContent = '(max $100,000)';
 
         } else if (isTransfer) {
-            // TRANSFER: показуємо текстове поле для введення рахунку отримувача
             recipientSection.classList.add('hidden');
             transferSection.classList.remove('hidden');
             recipientInput.removeAttribute('required');
             recipientInput.value = '';
             feeRow.classList.add('hidden');
-            hintText.innerHTML = 'Transfer to any PayFlow account — <strong class="text-gray-600">no fee</strong>';
+            hintText.innerHTML = 'Transfer between accounts — <strong class="text-gray-600">no fee</strong>';
             if (btnText) btnText.textContent = 'Transfer';
             summaryHeader.className = 'bg-gradient-to-br from-purple-700 to-purple-500 px-5 py-5 text-white';
-            // Очищаємо поле введення при зміні типу
-            const transferInput = document.getElementById('transferToInput');
-            if (transferInput) transferInput.value = '';
+            if (limitHint) limitHint.textContent = '(max $50,000)';
+            if (currentAccountId) {
+                const sel = document.getElementById('accountSelect');
+                const opt = sel.options[sel.selectedIndex];
+                if (opt?.dataset?.number) refreshMyAccountsDropdown(opt.dataset.number);
+            }
+            // Скидаємо sub-type
+            document.getElementById('subMyAccounts').checked = true;
+            onSubTypeChange();
 
         } else {
-            // PAYMENT: показуємо текстове поле для otримувача
             recipientSection.classList.remove('hidden');
             transferSection.classList.add('hidden');
             recipientInput.setAttribute('required', '');
@@ -442,6 +707,7 @@
             hintText.innerHTML = 'A <strong class="text-gray-600">1.5% fee</strong> is applied to payments';
             if (btnText) btnText.textContent = 'Send Payment';
             summaryHeader.className = 'bg-gradient-to-br from-blue-700 to-blue-500 px-5 py-5 text-white';
+            if (limitHint) limitHint.textContent = '(max $10,000)';
         }
 
         validateBalance();
@@ -449,18 +715,41 @@
         if (window.lucide) window.lucide.createIcons();
     }
 
+    // ── Перевірка ліміту ───────────────────────────────────────────────
+    function checkLimit(amount) {
+        const isPayment       = document.getElementById('typePayment').checked;
+        const isReplenishment = document.getElementById('typeReplenishment').checked;
+        const type = isPayment ? 'PAYMENT' : isReplenishment ? 'REPLENISHMENT' : 'TRANSFER';
+        const max  = LIMITS[type];
+        if (amount > max) {
+            showLimitError('Перевищено ліміт $' + max.toLocaleString('en') + ' для ' + type.toLowerCase());
+            return false;
+        }
+        hideLimitError();
+        return true;
+    }
+    function showLimitError(msg) {
+        const el = document.getElementById('limitErrorMsg');
+        const txt = document.getElementById('limitErrorText');
+        if (el && txt) { txt.textContent = msg; el.classList.remove('hidden'); }
+        document.getElementById('amountInput')?.classList.add('error');
+    }
+    function hideLimitError() {
+        document.getElementById('limitErrorMsg')?.classList.add('hidden');
+    }
+
     // ── Валідація балансу ──────────────────────────────────────────────
     function validateBalance() {
         const amount          = parseFloat(document.getElementById('amountInput').value) || 0;
         const isReplenishment = document.getElementById('typeReplenishment').checked;
         const isPayment       = document.getElementById('typePayment').checked;
-        const input   = document.getElementById('amountInput');
-        const bar     = document.getElementById('balanceBar');
+        const input    = document.getElementById('amountInput');
+        const bar      = document.getElementById('balanceBar');
         const afterRow = document.getElementById('balanceAfterRow');
         const afterVal = document.getElementById('balanceAfterValue');
         const insuffMsg = document.getElementById('insufficientMsg');
         const insuffTxt = document.getElementById('insufficientText');
-        const balVal  = document.getElementById('balanceValue');
+        const balVal   = document.getElementById('balanceValue');
 
         input.classList.remove('error');
         if (insuffMsg) insuffMsg.classList.add('hidden');
@@ -471,8 +760,9 @@
             return true;
         }
 
+        if (!checkLimit(amount)) return false;
+
         if (isReplenishment) {
-            // Top Up — баланс тільки зростає, нічого не перевіряємо
             if (bar) { bar.style.width = '0%'; bar.className = 'h-1.5 rounded-full bg-emerald-500 transition-all duration-300'; }
             if (afterRow && afterVal) {
                 afterRow.classList.remove('hidden');
@@ -482,7 +772,6 @@
             }
             return true;
         }
-
         if (currentBalance <= 0) return true;
 
         const total = isPayment ? amount * 1.015 : amount;
@@ -491,11 +780,12 @@
 
         if (bar) {
             bar.style.width = pct + '%';
-            if (pct >= 100)     bar.className = 'h-1.5 rounded-full bg-red-500 transition-all duration-300';
-            else if (pct >= 75) bar.className = 'h-1.5 rounded-full bg-amber-500 transition-all duration-300';
-            else                bar.className = 'h-1.5 rounded-full bg-blue-500 transition-all duration-300';
+            bar.className = pct >= 100
+                ? 'h-1.5 rounded-full bg-red-500 transition-all duration-300'
+                : pct >= 75
+                    ? 'h-1.5 rounded-full bg-amber-500 transition-all duration-300'
+                    : 'h-1.5 rounded-full bg-blue-500 transition-all duration-300';
         }
-
         if (afterRow && afterVal) {
             afterRow.classList.remove('hidden');
             document.getElementById('balanceAfterLabel').textContent = 'After payment';
@@ -503,11 +793,9 @@
                 afterVal.textContent = '$' + after.toFixed(2);
                 afterVal.className = after < currentBalance * 0.1 ? 'font-semibold text-amber-600' : 'font-semibold text-gray-700';
             } else {
-                afterVal.textContent = '—';
-                afterVal.className = 'font-semibold text-red-500';
+                afterVal.textContent = '—'; afterVal.className = 'font-semibold text-red-500';
             }
         }
-
         if (total > currentBalance) {
             input.classList.add('error');
             if (insuffMsg) insuffMsg.classList.remove('hidden');
@@ -515,8 +803,6 @@
             if (balVal) balVal.className = 'text-base font-extrabold text-red-600';
             return false;
         }
-
-        input.classList.remove('error');
         if (balVal) balVal.className = 'text-base font-extrabold text-gray-900';
         return true;
     }
@@ -532,8 +818,14 @@
         if (isReplenishment) {
             recipientLabel = 'Self (Top Up)';
         } else if (isTransfer) {
-            const v = document.getElementById('transferToInput')?.value.trim() || '';
-            recipientLabel = v || '—';
+            const isMy = document.getElementById('subMyAccounts').checked;
+            if (isMy) {
+                const sel = document.getElementById('myAccountsSelect');
+                const opt = sel.options[sel.selectedIndex];
+                recipientLabel = opt && opt.value ? (opt.dataset.name || opt.value) : '—';
+            } else {
+                recipientLabel = externalAccountValid ? externalAccountOwner : (document.getElementById('externalAccountInput')?.value.trim() || '—');
+            }
         } else {
             const v = document.getElementById('recipientInput').value.trim();
             recipientLabel = v || '—';
@@ -541,73 +833,91 @@
 
         const fee   = isPayment ? amount * 0.015 : 0;
         const total = amount + fee;
-
         const s = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-        recipientLabel = recipientLabel.length > 20 ? recipientLabel.substring(0,20)+'…' : recipientLabel;
+
+        recipientLabel = recipientLabel.length > 20 ? recipientLabel.substring(0, 20) + '…' : recipientLabel;
         s('summaryRecipient', recipientLabel);
-        s('summaryAmount',    '$' + amount.toFixed(2));
-        s('summaryFee',       '$' + fee.toFixed(2));
-        s('summaryTotal',     '$' + total.toFixed(2));
-        s('summaryTotalRow',  '$' + total.toFixed(2));
+        s('summaryAmount', '$' + amount.toFixed(2));
+        s('summaryFee', '$' + fee.toFixed(2));
+        s('summaryTotal', '$' + total.toFixed(2));
+        s('summaryTotalRow', '$' + total.toFixed(2));
 
         const typeEl = document.getElementById('summaryType');
         if (typeEl) {
-            if (isReplenishment) {
-                typeEl.textContent = 'Top Up';
-                typeEl.className = 'inline-flex items-center text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700';
-            } else if (isTransfer) {
-                typeEl.textContent = 'Transfer';
-                typeEl.className = 'inline-flex items-center text-xs font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700';
-            } else {
-                typeEl.textContent = 'Payment';
-                typeEl.className = 'inline-flex items-center text-xs font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700';
-            }
+            if (isReplenishment) { typeEl.textContent = 'Top Up'; typeEl.className = 'inline-flex items-center text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700'; }
+            else if (isTransfer) { typeEl.textContent = 'Transfer'; typeEl.className = 'inline-flex items-center text-xs font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700'; }
+            else { typeEl.textContent = 'Payment'; typeEl.className = 'inline-flex items-center text-xs font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700'; }
         }
     }
 
-    // ── Submit ─────────────────────────────────────────────────────────
-    document.getElementById('paymentForm')?.addEventListener('submit', function(e) {
+    // ── Модальне вікно підтвердження ───────────────────────────────────
+    function openModal() {
         const isReplenishment = document.getElementById('typeReplenishment').checked;
         const isTransfer      = document.getElementById('typeTransfer').checked;
         const isPayment       = document.getElementById('typePayment').checked;
-        const hidden          = document.getElementById('recipientAccountHidden');
+        const amount = parseFloat(document.getElementById('amountInput').value) || 0;
 
-        // Заповнюємо єдиний hidden input залежно від типу операції
+        // Базова валідація
+        if (!document.getElementById('accountSelect')?.value) {
+            alert('Будь ласка, оберіть рахунок'); return;
+        }
+        if (amount <= 0) { alert('Будь ласка, введіть суму'); return; }
+        if (!validateBalance()) return;
+
+        // Валідація recipient
         if (isTransfer) {
-            const transferVal = document.getElementById('transferToInput')?.value.trim() || '';
-            if (!transferVal) {
-                e.preventDefault();
-                alert('Please enter a recipient account number for transfer');
-                return;
+            const isMy = document.getElementById('subMyAccounts').checked;
+            if (isMy) {
+                const sel = document.getElementById('myAccountsSelect');
+                if (!sel.options[sel.selectedIndex]?.value) { alert('Оберіть рахунок призначення'); return; }
+                document.getElementById('recipientAccountHidden').value = sel.options[sel.selectedIndex].value;
+            } else {
+                if (!externalAccountValid) { alert('Введіть коректний номер рахунку отримувача'); return; }
+                document.getElementById('recipientAccountHidden').value = document.getElementById('externalAccountInput').value.trim();
             }
-            hidden.value = transferVal;
         } else if (isPayment) {
-            const recipientVal = document.getElementById('recipientInput').value.trim();
-            if (!recipientVal) {
-                e.preventDefault();
-                alert('Please enter a recipient account number');
-                return;
-            }
-            hidden.value = recipientVal;
-        } else {
-            // REPLENISHMENT — recipient не потрібен
-            hidden.value = '';
+            const v = document.getElementById('recipientInput').value.trim();
+            if (!v) { alert('Будь ласка, введіть рахунок отримувача'); return; }
+            document.getElementById('recipientAccountHidden').value = v;
         }
 
-        // Для REPLENISHMENT: не валідуємо баланс (він зростає)
-        if (!isReplenishment && !validateBalance()) {
-            e.preventDefault();
-            return;
-        }
+        // Заповнюємо модал
+        const fee = isPayment ? amount * 0.015 : 0;
+        const total = amount + fee;
+        const typeLabel = isReplenishment ? 'Top Up' : isTransfer ? 'Transfer' : 'Payment';
+        const recipientText = document.getElementById('summaryRecipient').textContent;
 
-        const btn  = document.getElementById('submitBtn');
-        const text = document.getElementById('btnText');
-        const icon = document.getElementById('btnIcon');
-        if (btn) {
-            btn.disabled = true;
-            if (text) text.textContent = 'Processing...';
-            if (icon) { icon.setAttribute('data-lucide', 'loader-2'); icon.classList.add('spin'); if (window.lucide) window.lucide.createIcons(); }
-        }
+        document.getElementById('modalAmount').textContent = '$' + total.toFixed(2);
+        document.getElementById('modalType').textContent = typeLabel;
+        document.getElementById('modalRecipient').textContent = recipientText;
+        document.getElementById('modalFee').textContent = '$' + fee.toFixed(2);
+        document.getElementById('modalFeeRow').style.display = isPayment ? 'flex' : 'none';
+        document.getElementById('modalTotal').textContent = '$' + total.toFixed(2);
+
+        const header = document.getElementById('modalHeader');
+        header.className = isReplenishment
+            ? 'bg-gradient-to-br from-emerald-700 to-emerald-500 px-6 py-5 text-white'
+            : isTransfer
+                ? 'bg-gradient-to-br from-purple-700 to-purple-500 px-6 py-5 text-white'
+                : 'bg-gradient-to-br from-blue-700 to-blue-500 px-6 py-5 text-white';
+
+        document.getElementById('confirmModal').classList.add('open');
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    function closeModal() {
+        document.getElementById('confirmModal').classList.remove('open');
+    }
+
+    function submitForm() {
+        document.getElementById('modalConfirmBtn').disabled = true;
+        document.getElementById('modalConfirmBtn').innerHTML = '<svg class="spin h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Обробляємо...';
+        document.getElementById('paymentForm').submit();
+    }
+
+    // Закриття по кліку на backdrop
+    document.getElementById('confirmModal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
     });
 
     // ── Auto-hide alerts ───────────────────────────────────────────────
