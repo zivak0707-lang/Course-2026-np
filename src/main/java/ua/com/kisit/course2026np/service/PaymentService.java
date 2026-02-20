@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ua.com.kisit.course2026np.entity.*;
 import ua.com.kisit.course2026np.repository.PaymentRepository;
 import ua.com.kisit.course2026np.repository.AccountRepository;
+import ua.com.kisit.course2026np.repository.CreditCardRepository;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +21,7 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final AccountRepository accountRepository;
+    private final CreditCardRepository creditCardRepository; // ← ДОДАНО
 
     // ============= ORIGINAL METHODS =============
 
@@ -27,13 +29,10 @@ public class PaymentService {
         return paymentRepository.save(payment);
     }
 
-    // ✅ ВИПРАВЛЕНО: додана перевірка блокування рахунку +
-    //               payment.setAccount() тепер викликається ПЕРЕД save() при помилці
     public Payment executePayment(Long accountId, Payment payment) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found"));
 
-        // ✅ Перевірка блокування (було відсутнє)
         if (account.getStatus() == AccountStatus.BLOCKED) {
             payment.setAccount(account);
             payment.fail("Sender account is blocked");
@@ -41,7 +40,6 @@ public class PaymentService {
         }
 
         if (account.getBalance().compareTo(payment.getAmount()) < 0) {
-            // ✅ setAccount() перед save() — інакше account_id = null → constraint violation
             payment.setAccount(account);
             payment.fail("Insufficient funds");
             return paymentRepository.save(payment);
@@ -56,12 +54,10 @@ public class PaymentService {
         return paymentRepository.save(payment);
     }
 
-    // ✅ ВИПРАВЛЕНО: додана перевірка блокування рахунку
     public Payment executeReplenishment(Long accountId, Payment payment) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found"));
 
-        // ✅ Перевірка блокування (було відсутнє)
         if (account.getStatus() == AccountStatus.BLOCKED) {
             payment.setAccount(account);
             payment.fail("Account is blocked");
@@ -78,23 +74,23 @@ public class PaymentService {
     }
 
     @Transactional
-    public Payment executeTransfer(Long senderAccountId, String recipientAccountNumber, Payment payment) {
+    public Payment executeTransfer(Long senderAccountId, String recipientInput, Payment payment) {
         Account sender = accountRepository.findById(senderAccountId)
                 .orElseThrow(() -> new IllegalArgumentException("Sender account not found"));
 
-        Account recipient = accountRepository.findByAccountNumber(recipientAccountNumber)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Recipient account not found: " + recipientAccountNumber));
+        // ✅ ВИПРАВЛЕНО: шукаємо отримувача спочатку за номером рахунку,
+        // потім за номером картки — бо форма може передавати будь-який з них
+        Account recipient = findRecipientAccount(recipientInput);
+
+        if (recipient == null) {
+            payment.setAccount(sender);
+            payment.fail("Recipient account not found: " + recipientInput);
+            return paymentRepository.save(payment);
+        }
 
         if (sender.getId().equals(recipient.getId())) {
             payment.setAccount(sender);
             payment.fail("Cannot transfer to the same account");
-            return paymentRepository.save(payment);
-        }
-
-        if (sender.getBalance().compareTo(payment.getAmount()) < 0) {
-            payment.setAccount(sender);
-            payment.fail("Insufficient funds");
             return paymentRepository.save(payment);
         }
 
@@ -110,9 +106,17 @@ public class PaymentService {
             return paymentRepository.save(payment);
         }
 
+        if (sender.getBalance().compareTo(payment.getAmount()) < 0) {
+            payment.setAccount(sender);
+            payment.fail("Insufficient funds");
+            return paymentRepository.save(payment);
+        }
+
+        // Списуємо у відправника
         sender.setBalance(sender.getBalance().subtract(payment.getAmount()));
         accountRepository.save(sender);
 
+        // ✅ Зараховуємо отримувачу
         recipient.setBalance(recipient.getBalance().add(payment.getAmount()));
         accountRepository.save(recipient);
 
@@ -123,8 +127,7 @@ public class PaymentService {
         payment.complete();
         paymentRepository.save(payment);
 
-        // Окремий запис для отримувача (REPLENISHMENT — зарахування)
-        // Без цього у отримувача транзакція не відображається в списку
+        // Запис для отримувача (REPLENISHMENT — зарахування)
         Payment incomingPayment = Payment.builder()
                 .account(recipient)
                 .amount(payment.getAmount())
@@ -140,6 +143,25 @@ public class PaymentService {
         paymentRepository.save(incomingPayment);
 
         return payment;
+    }
+
+    /**
+     * ✅ НОВИЙ ДОПОМІЖНИЙ МЕТОД
+     * Шукає акаунт отримувача за номером рахунку АБО за номером картки.
+     * Це вирішує проблему коли форма передає номер картки замість номера рахунку.
+     */
+    private Account findRecipientAccount(String input) {
+        if (input == null || input.isBlank()) return null;
+
+        String cleaned = input.trim();
+
+        // Спочатку шукаємо за номером рахунку
+        Optional<Account> byAccountNumber = accountRepository.findByAccountNumber(cleaned);
+        return byAccountNumber.orElseGet(() -> creditCardRepository.findByCardNumber(cleaned)
+                .flatMap(accountRepository::findByCreditCard)
+                .orElse(null));
+
+        // Якщо не знайшли — шукаємо за номером картки
     }
 
     // ============= READ METHODS =============

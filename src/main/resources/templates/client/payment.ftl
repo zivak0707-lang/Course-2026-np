@@ -224,31 +224,17 @@
                                 <p class="mt-1.5 text-xs text-gray-400">e.g. UA123456789012345678</p>
                             </div>
 
-                            <!-- 3b. Для TRANSFER: dropdown з власними рахунками -->
+                            <!-- 3b. Для TRANSFER: текстове поле для будь-якого номера рахунку -->
                             <div id="transferSection" class="hidden">
                                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                                     To account <span class="text-red-500">*</span>
                                 </label>
-                                <div class="relative">
-                                    <select id="transferToSelect" class="pay-select pr-10" onchange="onTransferToChange(this)">
-                                        <option value="">— Select destination account —</option>
-                                        <#if accounts?? && accounts?size gt 0>
-                                        <#list accounts as acc>
-                                            <option value="${acc.accountNumber}"
-                                                    data-id="${acc.id?c}"
-                                                    data-name="${acc.accountName!'Account'}">
-                                                ${acc.accountName!"Account"} · ****${acc.accountNumber?substring(acc.accountNumber?length - 4)}
-                                            </option>
-                                        </#list>
-                                        </#if>
-                                    </select>
-                                    <div class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                                        <i data-lucide="chevron-down" class="h-4 w-4"></i>
-                                    </div>
-                                </div>
+                                <input type="text" id="transferToInput"
+                                       class="pay-input" placeholder="Enter recipient account number"
+                                       maxlength="255" oninput="onTransferInputChange(this)">
                                 <p class="mt-1.5 text-xs text-purple-500 flex items-center gap-1">
                                     <i data-lucide="info" class="h-3.5 w-3.5"></i>
-                                    Transfer between your own accounts — no fee
+                                    Enter account number of any PayFlow user — no fee
                                 </p>
                             </div>
 
@@ -387,8 +373,6 @@
             currentAccountId = opt.value;
             val.textContent = '$' + currentBalance.toFixed(2);
             block.classList.remove('hidden');
-            // Оновлюємо список Transfer (прибираємо вибраний рахунок)
-            refreshTransferOptions(opt.value);
         } else {
             currentBalance = 0;
             currentAccountId = null;
@@ -399,35 +383,10 @@
         if (window.lucide) window.lucide.createIcons();
     }
 
-    // ── Прибираємо з Transfer dropdown рахунок відправника ────────────
-    function refreshTransferOptions(senderAccountId) {
-        const sel = document.getElementById('transferToSelect');
-        Array.from(sel.options).forEach(opt => {
-            if (opt.dataset.id === senderAccountId) {
-                opt.disabled = true;
-                opt.textContent = opt.textContent.replace(' (same)', '') + ' (same)';
-            } else {
-                opt.disabled = false;
-                opt.textContent = opt.textContent.replace(' (same)', '');
-            }
-        });
-        // Якщо обраний рахунок співпадає — скидаємо вибір
-        const selOpt = sel.options[sel.selectedIndex];
-        if (selOpt && selOpt.dataset.id === senderAccountId) {
-            sel.selectedIndex = 0;
-            document.getElementById('recipientAccountHidden').value = '';
-        }
-    }
-
-    // ── Вибір рахунку отримувача (Transfer) ───────────────────────────
-    function onTransferToChange(select) {
-        const opt = select.options[select.selectedIndex];
+    // ── Введення рахунку отримувача (Transfer) ────────────────────────
+    function onTransferInputChange(input) {
         const hidden = document.getElementById('recipientAccountHidden');
-        if (opt.value) {
-            hidden.value = opt.value; // встановлюємо account_number
-        } else {
-            hidden.value = '';
-        }
+        hidden.value = input.value.trim();
         updateSummary();
     }
 
@@ -461,16 +420,18 @@
             summaryHeader.className = 'bg-gradient-to-br from-emerald-700 to-emerald-500 px-5 py-5 text-white';
 
         } else if (isTransfer) {
-            // TRANSFER: показуємо dropdown власних рахунків
+            // TRANSFER: показуємо текстове поле для введення рахунку отримувача
             recipientSection.classList.add('hidden');
             transferSection.classList.remove('hidden');
             recipientInput.removeAttribute('required');
             recipientInput.value = '';
             feeRow.classList.add('hidden');
-            hintText.innerHTML = 'Transfer between your accounts — <strong class="text-gray-600">no fee</strong>';
+            hintText.innerHTML = 'Transfer to any PayFlow account — <strong class="text-gray-600">no fee</strong>';
             if (btnText) btnText.textContent = 'Transfer';
             summaryHeader.className = 'bg-gradient-to-br from-purple-700 to-purple-500 px-5 py-5 text-white';
-            if (currentAccountId) refreshTransferOptions(currentAccountId);
+            // Очищаємо поле введення при зміні типу
+            const transferInput = document.getElementById('transferToInput');
+            if (transferInput) transferInput.value = '';
 
         } else {
             // PAYMENT: показуємо текстове поле для otримувача
@@ -571,9 +532,8 @@
         if (isReplenishment) {
             recipientLabel = 'Self (Top Up)';
         } else if (isTransfer) {
-            const sel = document.getElementById('transferToSelect');
-            const opt = sel.options[sel.selectedIndex];
-            recipientLabel = opt && opt.value ? opt.dataset.name || opt.value : '—';
+            const v = document.getElementById('transferToInput')?.value.trim() || '';
+            recipientLabel = v || '—';
         } else {
             const v = document.getElementById('recipientInput').value.trim();
             recipientLabel = v || '—';
@@ -614,14 +574,13 @@
 
         // Заповнюємо єдиний hidden input залежно від типу операції
         if (isTransfer) {
-            const sel = document.getElementById('transferToSelect');
-            const selVal = sel.options[sel.selectedIndex]?.value || '';
-            if (!selVal) {
+            const transferVal = document.getElementById('transferToInput')?.value.trim() || '';
+            if (!transferVal) {
                 e.preventDefault();
-                alert('Please select a destination account for transfer');
+                alert('Please enter a recipient account number for transfer');
                 return;
             }
-            hidden.value = selVal;
+            hidden.value = transferVal;
         } else if (isPayment) {
             const recipientVal = document.getElementById('recipientInput').value.trim();
             if (!recipientVal) {
