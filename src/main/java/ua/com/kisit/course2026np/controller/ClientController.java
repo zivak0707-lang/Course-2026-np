@@ -30,13 +30,37 @@ public class ClientController {
     private final PaymentService paymentService;
     private final AccountService accountService;
 
+    // ─────────────────────────────────────────────────────────────────
+    //  HELPER: повертає поточного юзера або кидає редірект на /blocked
+    //  Перевіряє isActive з БД при КОЖНОМУ запиті — щоб блокування
+    //  адміном набирало чинності одразу, без перезапуску сесії.
+    // ─────────────────────────────────────────────────────────────────
     private User getCurrentUser(HttpSession session) {
         Long userId = (Long) session.getAttribute("userId");
+
         if (userId != null) {
-            return userRepository.findById(userId)
-                    .orElseGet(this::getFallbackUser);
+            User user = userRepository.findById(userId).orElse(null);
+
+            if (user != null) {
+                // Перевіряємо статус блокування прямо з БД
+                if (!Boolean.TRUE.equals(user.getIsActive())) {
+                    // Інвалідуємо сесію — щоб не лишалося "мертвих" сесій
+                    session.invalidate();
+                    throw new UserBlockedException();
+                }
+                return user;
+            }
         }
+
+        // Fallback для розробки (якщо немає сесії)
         return getFallbackUser();
+    }
+
+    // Кастомний exception для зручного перехоплення
+    public static class UserBlockedException extends RuntimeException {
+        public UserBlockedException() {
+            super("User account is blocked");
+        }
     }
 
     private User getFallbackUser() {
@@ -46,7 +70,9 @@ public class ClientController {
                 .orElseThrow(() -> new IllegalStateException("No CLIENT user found in DB"));
     }
 
-    // --- 1. DASHBOARD ---
+    // ─────────────────────────────────────────────────────────────────
+    //  1. DASHBOARD
+    // ─────────────────────────────────────────────────────────────────
     @GetMapping({"", "/"})
     public String dashboard(HttpSession session, Model model) {
         User user = getCurrentUser(session);
@@ -88,7 +114,9 @@ public class ClientController {
         return "client/dashboard";
     }
 
-    // --- 2. ACCOUNTS ---
+    // ─────────────────────────────────────────────────────────────────
+    //  2. ACCOUNTS
+    // ─────────────────────────────────────────────────────────────────
     @GetMapping("/accounts")
     public String accounts(HttpSession session, Model model) {
         User user = getCurrentUser(session);
@@ -119,7 +147,9 @@ public class ClientController {
         return "client/accounts";
     }
 
-    // --- 3. CARDS ---
+    // ─────────────────────────────────────────────────────────────────
+    //  3. CARDS
+    // ─────────────────────────────────────────────────────────────────
     @GetMapping("/cards")
     public String cards(HttpSession session, Model model) {
         User user = getCurrentUser(session);
@@ -202,7 +232,9 @@ public class ClientController {
         return "redirect:/dashboard/cards";
     }
 
-    // --- 4. PAYMENT (сторінка) ---
+    // ─────────────────────────────────────────────────────────────────
+    //  4. PAYMENT
+    // ─────────────────────────────────────────────────────────────────
     @GetMapping("/payment")
     public String payment(HttpSession session, Model model) {
         User user = getCurrentUser(session);
@@ -223,16 +255,6 @@ public class ClientController {
         return "client/payment";
     }
 
-    // --- 4.1 PAYMENT SUBMIT ---
-    // ✅ ВИПРАВЛЕНО: REPLENISHMENT тепер правильно поповнює СВІЙ рахунок
-    // ❌ БУЛО: викликав executeTransfer(accountId, recipientAccount, payment)
-    //          → намагався зняти гроші з рахунку і переказати на ІНШИЙ рахунок
-    //          → якщо recipientAccount порожній або не існує — падав з помилкою
-    // ✅ СТАЛО: REPLENISHMENT викликає executeReplenishment(accountId, payment)
-    //          → просто додає суму до балансу обраного рахунку, без потреби в recipientAccount
-    //
-    // TRANSFER: окремий тип для переказу між рахунками (вимагає recipientAccount)
-    // PAYMENT:  списання коштів з рахунку (звичайний платіж)
     @PostMapping("/payment/submit")
     public String submitPayment(
             @RequestParam Long accountId,
@@ -246,7 +268,6 @@ public class ClientController {
         try {
             User user = getCurrentUser(session);
 
-            // Перевіряємо що рахунок належить цьому користувачу
             List<CreditCard> userCards = creditCardRepository.findByUser(user);
             List<Account> userAccounts = getUserAccounts(userCards);
 
@@ -269,18 +290,15 @@ public class ClientController {
 
             switch (type) {
                 case "REPLENISHMENT" -> {
-                    // ✅ Поповнення свого рахунку — не потребує recipientAccount
                     result = paymentService.executeReplenishment(accountId, payment);
                 }
                 case "TRANSFER" -> {
-                    // Переказ на інший рахунок — потребує recipientAccount
                     if (recipientAccount == null || recipientAccount.isBlank()) {
                         throw new IllegalArgumentException("Вкажіть рахунок отримувача для переказу");
                     }
                     result = paymentService.executeTransfer(accountId, recipientAccount, payment);
                 }
                 default -> {
-                    // PAYMENT — звичайний платіж (списання)
                     if (recipientAccount == null || recipientAccount.isBlank()) {
                         throw new IllegalArgumentException("Вкажіть рахунок отримувача для платежу");
                     }
@@ -307,7 +325,9 @@ public class ClientController {
         return "redirect:/dashboard/payment";
     }
 
-    // --- 5. SETTINGS ---
+    // ─────────────────────────────────────────────────────────────────
+    //  5. SETTINGS
+    // ─────────────────────────────────────────────────────────────────
     @GetMapping("/settings")
     public String settings(HttpSession session, Model model) {
         model.addAttribute("user", getCurrentUser(session));
@@ -365,14 +385,18 @@ public class ClientController {
         return "redirect:/dashboard/settings";
     }
 
-    // --- 6. LOGOUT ---
+    // ─────────────────────────────────────────────────────────────────
+    //  6. LOGOUT
+    // ─────────────────────────────────────────────────────────────────
     @GetMapping("/logout")
     public String logout(HttpSession session) {
         session.invalidate();
         return "redirect:/";
     }
 
-    // --- HELPERS ---
+    // ─────────────────────────────────────────────────────────────────
+    //  HELPERS
+    // ─────────────────────────────────────────────────────────────────
     private List<Account> getUserAccounts(List<CreditCard> cards) {
         return cards.stream()
                 .flatMap(card -> accountRepository.findByCreditCardId(card.getId()).stream())
