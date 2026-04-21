@@ -91,7 +91,7 @@ public class Account {
         validateAmount(amount);
 
         if (status == AccountStatus.BLOCKED) {
-            throw new IllegalStateException("Рахунок заблокований");
+            throw new IllegalStateException("Неможливо поповнити заблокований рахунок");
         }
 
         balance = balance.add(amount);
@@ -101,11 +101,11 @@ public class Account {
         validateAmount(amount);
 
         if (status == AccountStatus.BLOCKED) {
-            throw new IllegalStateException("Рахунок заблокований");
+            throw new IllegalStateException("Неможливо зняти кошти із заблокованого рахунку");
         }
 
         if (balance.compareTo(amount) < 0) {
-            throw new IllegalStateException("Недостатньо коштів");
+            throw new IllegalStateException("Недостатньо коштів на рахунку");
         }
 
         balance = balance.subtract(amount);
@@ -127,7 +127,7 @@ public class Account {
 
     private void validateAmount(BigDecimal amount) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Сума має бути більшою за нуль");
+            throw new IllegalArgumentException("Сума поповнення має бути більше нуля");
         }
     }
 }

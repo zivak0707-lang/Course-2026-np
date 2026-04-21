@@ -101,11 +101,11 @@ public class CreditCard {
     // ── BUSINESS LOGIC ─────────────────────────────────────────
 
     public boolean isExpired() {
-        return expiryDate != null && expiryDate.isBefore(LocalDate.now());
+        return expiryDate != null && !expiryDate.isAfter(LocalDate.now());
     }
 
     public String getMaskedCardNumber() {
-        if (cardNumber == null || cardNumber.length() < 4) return "";
+        if (cardNumber == null || cardNumber.length() != 16) return "";
         return "**** **** **** " + cardNumber.substring(cardNumber.length() - 4);
     }
 
