@@ -273,6 +273,43 @@ public class AdminController {
         return "redirect:/admin/users";
     }
 
+    @PostMapping("/users/assign-role")
+    public String assignRole(@RequestParam Long userId,
+                             @RequestParam String role,
+                             RedirectAttributes redirectAttributes,
+                             HttpSession session) {
+        if (isNotAuthenticated(session)) return "redirect:/admin/login";
+        User admin = (User) session.getAttribute("adminUser");
+        if (admin != null && admin.getId().equals(userId)) {
+            redirectAttributes.addFlashAttribute("errorMessage", "You cannot change your own role");
+            return "redirect:/admin/users";
+        }
+        try {
+            UserRole newRole = UserRole.valueOf(role.toUpperCase());
+            if (newRole == UserRole.ADMIN) {
+                redirectAttributes.addFlashAttribute("errorMessage", "ADMIN role cannot be assigned via panel");
+                return "redirect:/admin/users";
+            }
+            Optional<User> userOpt = userRepository.findById(userId);
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                if (user.getRole() == UserRole.ADMIN) {
+                    redirectAttributes.addFlashAttribute("errorMessage", "Cannot change role of another administrator");
+                    return "redirect:/admin/users";
+                }
+                user.setRole(newRole);
+                userRepository.save(user);
+                redirectAttributes.addFlashAttribute("successMessage",
+                        user.getEmail() + " is now " + newRole.name());
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "User not found");
+            }
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Invalid role: " + role);
+        }
+        return "redirect:/admin/users";
+    }
+
     @PostMapping("/users/delete")
     public String deleteUser(@RequestParam Long userId,
                              RedirectAttributes redirectAttributes,

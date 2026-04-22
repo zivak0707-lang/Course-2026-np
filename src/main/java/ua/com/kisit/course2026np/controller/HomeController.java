@@ -49,7 +49,14 @@ public class HomeController {
         }
         session.setAttribute("userId", user.getId());
         session.setAttribute("userRole", user.getRole());
-        if (user.getRole() == UserRole.ADMIN) return "redirect:/admin";
+        if (user.getRole() == UserRole.ADMIN) {
+            session.setAttribute("adminUser", user);
+            return "redirect:/admin";
+        }
+        if (user.getRole() == UserRole.MANAGER) {
+            session.setAttribute("managerUser", user);
+            return "redirect:/manager";
+        }
         return "redirect:/dashboard";
     }
 

@@ -43,6 +43,9 @@
         .role-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:.72rem;font-weight:600}
         .role-client{background:#dbeafe;color:#1e40af}
         .role-admin{background:#ede9fe;color:#5b21b6}
+        .role-manager{background:#d1fae5;color:#065f46}
+        .btn-role{height:28px;padding:0 10px;border-radius:7px;font-size:.75rem;font-weight:600;border:1px solid #e5e7eb;background:#fff;cursor:pointer;transition:background .15s;white-space:nowrap}
+        .btn-role:hover{background:#f3f4f6}
         .form-control-sm,.form-select-sm{border-radius:8px;font-size:.85rem;border-color:#e5e7eb}
         .form-control-sm:focus,.form-select-sm:focus{border-color:#4f46e5;box-shadow:0 0 0 3px rgba(79,70,229,.12)}
         .btn-icon{width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;font-size:.85rem}
@@ -122,6 +125,7 @@
                 <select id="roleFilter" class="form-select form-select-sm" style="width:140px">
                     <option value="ALL">All Roles</option>
                     <option value="CLIENT">Client</option>
+                    <option value="MANAGER">Manager</option>
                     <option value="ADMIN">Admin</option>
                 </select>
                 <select id="statusFilter" class="form-select form-select-sm" style="width:140px">
@@ -141,8 +145,9 @@
                     <tbody id="usersBody">
                     <#if users?? && (users?size > 0)>
                         <#list users as u>
-                            <#assign isActive = u.isActive?? && u.isActive>
-                            <#assign isAdmin  = u.role.name() == "ADMIN">
+                            <#assign isActive  = u.isActive?? && u.isActive>
+                            <#assign isAdmin   = u.role.name() == "ADMIN">
+                            <#assign isManager = u.role.name() == "MANAGER">
                             <#assign bgColors = ["#ede9fe","#dbeafe","#d1fae5","#fef3c7","#fee2e2","#f0fdf4"]>
                             <#assign txColors = ["#5b21b6","#1e40af","#065f46","#92400e","#991b1b","#166534"]>
                             <#assign ci = (u.id % 6)?int>
@@ -163,6 +168,8 @@
                                 <td>
                                     <#if isAdmin>
                                         <span class="role-badge role-admin"><i class="bi bi-shield-fill"></i>Admin</span>
+                                    <#elseif isManager>
+                                        <span class="role-badge role-manager"><i class="bi bi-speedometer2"></i>Manager</span>
                                     <#else>
                                         <span class="role-badge role-client"><i class="bi bi-person"></i>Client</span>
                                     </#if>
@@ -194,6 +201,12 @@
                                                 data-registered="<#if u.createdAt??><#assign mo2=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]>${mo2[u.createdAt.monthValue-1]} ${u.createdAt.dayOfMonth}, ${u.createdAt.year?c}<#else>—</#if>">
                                             <i class="bi bi-eye"></i>
                                         </button>
+                                        <#if !isAdmin>
+                                            <button type="button" class="btn btn-light btn-icon" title="Assign role"
+                                                    onclick="openRoleModal(${u.id},'${u.firstName} ${u.lastName}','${u.role.name()}')">
+                                                <i class="bi bi-person-gear"></i>
+                                            </button>
+                                        </#if>
                                         <button type="button" class="btn btn-light btn-icon text-danger" title="Delete user"
                                                 onclick="confirmDelete(${u.id},'${u.firstName} ${u.lastName}')">
                                             <i class="bi bi-trash"></i>
@@ -243,6 +256,42 @@
     </div>
 </div>
 
+<!-- Assign role modal -->
+<div class="modal fade" id="roleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title fw-bold"><i class="bi bi-person-gear me-2"></i>Assign Role</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="roleForm" method="post" action="/admin/users/assign-role" style="margin:0">
+                <input type="hidden" name="userId" id="roleUserId">
+                <div class="modal-body pt-2 pb-2">
+                    <p class="text-muted small mb-3" id="roleUserName" style="font-size:.82rem"></p>
+                    <div class="d-flex flex-column gap-2">
+                        <label class="d-flex align-items-center gap-2 p-2 rounded-3" style="cursor:pointer;border:1.5px solid #e5e7eb" id="lbl-client">
+                            <input type="radio" name="role" value="CLIENT" id="role-client" style="accent-color:#2563eb">
+                            <span class="role-badge role-client ms-1"><i class="bi bi-person"></i>Client</span>
+                            <span class="text-muted ms-auto" style="font-size:.72rem">Default user</span>
+                        </label>
+                        <label class="d-flex align-items-center gap-2 p-2 rounded-3" style="cursor:pointer;border:1.5px solid #e5e7eb" id="lbl-manager">
+                            <input type="radio" name="role" value="MANAGER" id="role-manager" style="accent-color:#059669">
+                            <span class="role-badge role-manager ms-1"><i class="bi bi-speedometer2"></i>Manager</span>
+                            <span class="text-muted ms-auto" style="font-size:.72rem">Analytics access</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 gap-2">
+                    <button type="button" class="btn btn-light rounded-3 px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn rounded-3 px-3" style="background:#4f46e5;color:#fff;font-weight:600;border:none;font-size:.85rem">
+                        <i class="bi bi-check2 me-1"></i>Apply
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Delete confirm modal -->
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
@@ -274,14 +323,34 @@ document.getElementById('userModal').addEventListener('show.bs.modal',function(e
     document.getElementById('modalEmail').textContent=b.dataset.email;
     document.getElementById('modalId').textContent='USR-'+String(b.dataset.id).padStart(3,'0');
     const role=b.dataset.role;
-    document.getElementById('modalRole').innerHTML=role==='ADMIN'
+    const roleBadge=role==='ADMIN'
         ?'<span class="role-badge role-admin"><i class="bi bi-shield-fill"></i>Admin</span>'
+        :role==='MANAGER'
+        ?'<span class="role-badge role-manager"><i class="bi bi-speedometer2"></i>Manager</span>'
         :'<span class="role-badge role-client"><i class="bi bi-person"></i>Client</span>';
+    document.getElementById('modalRole').innerHTML=roleBadge;
     const active=b.dataset.active==='Yes';
     document.getElementById('modalStatus').innerHTML=active
         ?'<span style="color:#059669"><i class="bi bi-circle-fill me-1" style="font-size:.5rem"></i>Active</span>'
         :'<span style="color:#dc2626"><i class="bi bi-circle-fill me-1" style="font-size:.5rem"></i>Blocked</span>';
     document.getElementById('modalRegistered').textContent=b.dataset.registered;
+});
+
+function openRoleModal(id, name, currentRole) {
+    document.getElementById('roleUserId').value = id;
+    document.getElementById('roleUserName').textContent = 'User: ' + name;
+    document.getElementById('role-client').checked  = currentRole === 'CLIENT';
+    document.getElementById('role-manager').checked = currentRole === 'MANAGER';
+    // Highlight current selection
+    document.getElementById('lbl-client').style.borderColor  = currentRole === 'CLIENT'  ? '#2563eb' : '#e5e7eb';
+    document.getElementById('lbl-manager').style.borderColor = currentRole === 'MANAGER' ? '#059669' : '#e5e7eb';
+    new bootstrap.Modal(document.getElementById('roleModal')).show();
+}
+document.querySelectorAll('#roleModal input[type=radio]').forEach(r => {
+    r.addEventListener('change', () => {
+        document.getElementById('lbl-client').style.borderColor  = r.value === 'CLIENT'  && r.checked ? '#2563eb' : (document.getElementById('role-client').checked  ? '#2563eb' : '#e5e7eb');
+        document.getElementById('lbl-manager').style.borderColor = r.value === 'MANAGER' && r.checked ? '#059669' : (document.getElementById('role-manager').checked ? '#059669' : '#e5e7eb');
+    });
 });
 
 function confirmDelete(id,name){
