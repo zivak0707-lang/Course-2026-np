@@ -38,37 +38,31 @@ public class ClientController {
     // ─────────────────────────────────────────────────────────────────
     private User getCurrentUser(HttpSession session) {
         Long userId = (Long) session.getAttribute("userId");
-
-        if (userId != null) {
-            User user = userRepository.findById(userId).orElse(null);
-
-            if (user != null) {
-                // Перевіряємо статус блокування прямо з БД
-                if (!Boolean.TRUE.equals(user.getIsActive())) {
-                    // Інвалідуємо сесію — щоб не лишалося "мертвих" сесій
-                    session.invalidate();
-                    throw new UserBlockedException();
-                }
-                return user;
-            }
+        if (userId == null) {
+            throw new UserNotAuthenticatedException();
         }
-
-        // Fallback для розробки (якщо немає сесії)
-        return getFallbackUser();
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            session.invalidate();
+            throw new UserNotAuthenticatedException();
+        }
+        if (!Boolean.TRUE.equals(user.getIsActive())) {
+            session.invalidate();
+            throw new UserBlockedException();
+        }
+        return user;
     }
 
-    // Кастомний exception для зручного перехоплення
+    public static class UserNotAuthenticatedException extends RuntimeException {
+        public UserNotAuthenticatedException() {
+            super("User is not authenticated");
+        }
+    }
+
     public static class UserBlockedException extends RuntimeException {
         public UserBlockedException() {
             super("User account is blocked");
         }
-    }
-
-    private User getFallbackUser() {
-        return userRepository.findAll().stream()
-                .filter(u -> u.getRole() == UserRole.CLIENT)
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No CLIENT user found in DB"));
     }
 
     // ─────────────────────────────────────────────────────────────────

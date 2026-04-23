@@ -29,9 +29,14 @@ public class CreditCardController {
             @PathVariable Long id,
             HttpSession session) {
 
-        if (session.getAttribute("userId") == null) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) {
             return ResponseEntity.status(401).body(Map.of(
                     "success", false, "message", "Not authenticated"));
+        }
+        if (!creditCardService.isOwnedByUser(id, userId)) {
+            return ResponseEntity.status(403).body(Map.of(
+                    "success", false, "message", "Forbidden"));
         }
         try {
             boolean isActive = creditCardService.toggleBlockCard(id);
@@ -54,9 +59,14 @@ public class CreditCardController {
             @RequestBody @Valid ChangePinRequest request,
             HttpSession session) {
 
-        if (session.getAttribute("userId") == null) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) {
             return ResponseEntity.status(401).body(Map.of(
                     "success", false, "message", "Not authenticated"));
+        }
+        if (!creditCardService.isOwnedByUser(id, userId)) {
+            return ResponseEntity.status(403).body(Map.of(
+                    "success", false, "message", "Forbidden"));
         }
         try {
             // Перевіряємо чи картка вже має PIN
@@ -91,9 +101,14 @@ public class CreditCardController {
             @RequestBody @Valid SpendingLimitRequest request,
             HttpSession session) {
 
-        if (session.getAttribute("userId") == null) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) {
             return ResponseEntity.status(401).body(Map.of(
                     "success", false, "message", "Not authenticated"));
+        }
+        if (!creditCardService.isOwnedByUser(id, userId)) {
+            return ResponseEntity.status(403).body(Map.of(
+                    "success", false, "message", "Forbidden"));
         }
         try {
             creditCardService.setSpendingLimit(id, request);

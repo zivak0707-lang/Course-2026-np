@@ -218,6 +218,18 @@ public class CreditCardService {
     }
 
     // ══════════════════════════════════════════════════════════
+    // OWNERSHIP
+    // ══════════════════════════════════════════════════════════
+
+    @Transactional(readOnly = true)
+    public boolean isOwnedByUser(Long cardId, Long userId) {
+        if (userId == null) return false;
+        return creditCardRepository.findById(cardId)
+                .map(card -> card.getUser() != null && userId.equals(card.getUser().getId()))
+                .orElse(false);
+    }
+
+    // ══════════════════════════════════════════════════════════
     // UTILITIES
     // ══════════════════════════════════════════════════════════
 

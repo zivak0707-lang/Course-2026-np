@@ -22,6 +22,11 @@ public class GlobalExceptionHandler {
     //  З @ControllerAdvice рядок "redirect:/..." ігнорується Spring-ом —
     //  він не проходить через ViewNameTranslator як у звичайному контролері.
     // ─────────────────────────────────────────────────────────────────
+    @ExceptionHandler(ClientController.UserNotAuthenticatedException.class)
+    public ModelAndView handleNotAuthenticatedException() {
+        return new ModelAndView(new RedirectView("/login", true));
+    }
+
     @ExceptionHandler(ClientController.UserBlockedException.class)
     public ModelAndView handleBlockedException() {
         return new ModelAndView(new RedirectView("/blocked", true));

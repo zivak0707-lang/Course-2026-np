@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import ua.com.kisit.course2026np.entity.User;
 import ua.com.kisit.course2026np.entity.UserRole;
 import ua.com.kisit.course2026np.repository.UserRepository;
+import ua.com.kisit.course2026np.service.LoginAttemptService;
 
 import java.util.Optional;
 
@@ -20,6 +21,7 @@ public class HomeController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final LoginAttemptService loginAttemptService;
 
     @GetMapping("/")
     public String index() { return "index"; }
@@ -33,15 +35,26 @@ public class HomeController {
     @PostMapping("/login")
     public String handleLogin(@RequestParam String email, @RequestParam String password,
                               HttpSession session, Model model) {
+        String normalizedEmail = email.trim();
+
+        if (loginAttemptService.isBlocked(normalizedEmail)) {
+            long minutes = loginAttemptService.getMinutesLeft(normalizedEmail);
+            model.addAttribute("error",
+                    "Забагато невдалих спроб. Спробуйте через " + minutes + " хв.");
+            return "login";
+        }
+
         Optional<User> userOpt = userRepository.findAll().stream()
-                .filter(u -> u.getEmail().equalsIgnoreCase(email.trim()))
+                .filter(u -> u.getEmail().equalsIgnoreCase(normalizedEmail))
                 .findFirst();
         if (userOpt.isEmpty()) {
+            loginAttemptService.recordFailure(normalizedEmail);
             model.addAttribute("error", "Невірний email або пароль");
             return "login";
         }
         User user = userOpt.get();
         if (!passwordEncoder.matches(password.trim(), user.getPassword())) {
+            loginAttemptService.recordFailure(normalizedEmail);
             model.addAttribute("error", "Невірний email або пароль");
             return "login";
         }
@@ -49,6 +62,7 @@ public class HomeController {
         if (!Boolean.TRUE.equals(user.getIsActive())) {
             return "redirect:/blocked";
         }
+        loginAttemptService.recordSuccess(normalizedEmail);
         session.setAttribute("userId", user.getId());
         session.setAttribute("userRole", user.getRole());
         if (user.getRole() == UserRole.ADMIN) {
