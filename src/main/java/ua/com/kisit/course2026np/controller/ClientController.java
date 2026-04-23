@@ -29,6 +29,7 @@ public class ClientController {
     private final CreditCardRepository creditCardRepository;
     private final PaymentService paymentService;
     private final AccountService accountService;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     // ─────────────────────────────────────────────────────────────────
     //  HELPER: повертає поточного юзера або кидає редірект на /blocked
@@ -375,11 +376,11 @@ public class ClientController {
                                  HttpSession session,
                                  RedirectAttributes redirectAttributes) {
         User user = getCurrentUser(session);
-        if (!user.getPassword().equals(currentPassword)) {
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
             redirectAttributes.addFlashAttribute("errorMessage", "Невірний поточний пароль!");
             return "redirect:/dashboard/settings";
         }
-        user.setPassword(newPassword);
+        user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
         redirectAttributes.addFlashAttribute("successMessage", "Пароль успішно змінено!");
         return "redirect:/dashboard/settings";

@@ -1,6 +1,7 @@
 package ua.com.kisit.course2026np.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ua.com.kisit.course2026np.dto.DashboardStats;
 import ua.com.kisit.course2026np.dto.TransactionPage;
@@ -14,6 +15,7 @@ public class ManagerService {
 
     private final UserRepository userRepository;
     private final DashboardService dashboardService;
+    private final PasswordEncoder passwordEncoder;
 
     // ── Auth ──────────────────────────────────────────────────────────────────
 
@@ -22,7 +24,7 @@ public class ManagerService {
                 .filter(u -> u.getEmail().equalsIgnoreCase(email.trim()) && u.getRole() == UserRole.MANAGER)
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("User not found or insufficient privileges"));
-        if (!manager.getPassword().equals(password.trim())) {
+        if (!passwordEncoder.matches(password.trim(), manager.getPassword())) {
             throw new IllegalArgumentException("Incorrect password");
         }
         if (!Boolean.TRUE.equals(manager.getIsActive())) {

@@ -2,6 +2,7 @@ package ua.com.kisit.course2026np.controller;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +19,7 @@ import java.util.Optional;
 public class HomeController {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @GetMapping("/")
     public String index() { return "index"; }
@@ -39,7 +41,7 @@ public class HomeController {
             return "login";
         }
         User user = userOpt.get();
-        if (!user.getPassword().equals(password.trim())) {
+        if (!passwordEncoder.matches(password.trim(), user.getPassword())) {
             model.addAttribute("error", "Невірний email або пароль");
             return "login";
         }
@@ -76,7 +78,7 @@ public class HomeController {
         newUser.setFirstName(firstName.trim());
         newUser.setLastName(lastName.trim());
         newUser.setEmail(email.trim());
-        newUser.setPassword(password);
+        newUser.setPassword(passwordEncoder.encode(password));
         newUser.setRole(UserRole.CLIENT);
         newUser.setIsActive(true);
         userRepository.save(newUser);

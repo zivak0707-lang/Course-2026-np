@@ -1,6 +1,7 @@
 package ua.com.kisit.course2026np.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ua.com.kisit.course2026np.dto.DashboardStats;
@@ -21,6 +22,7 @@ public class AdminService {
     private final UserRepository userRepository;
     private final PaymentRepository paymentRepository;
     private final DashboardService dashboardService;
+    private final PasswordEncoder passwordEncoder;
 
     // ── Auth ──────────────────────────────────────────────────────────────────
 
@@ -29,7 +31,7 @@ public class AdminService {
                 .filter(u -> u.getEmail().equalsIgnoreCase(email.trim()) && u.getRole() == UserRole.ADMIN)
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("User not found or insufficient privileges"));
-        if (!admin.getPassword().equals(password.trim())) {
+        if (!passwordEncoder.matches(password.trim(), admin.getPassword())) {
             throw new IllegalArgumentException("Incorrect password");
         }
         return admin;
@@ -154,16 +156,16 @@ public class AdminService {
     public void updatePassword(Long adminId, String currentPassword, String newPassword) {
         User user = userRepository.findById(adminId)
                 .orElseThrow(() -> new IllegalArgumentException("Admin account not found"));
-        if (!user.getPassword().equals(currentPassword)) {
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
             throw new IllegalArgumentException("Current password is incorrect");
         }
         if (newPassword.trim().length() < 6) {
             throw new IllegalArgumentException("New password must be at least 6 characters");
         }
-        if (currentPassword.equals(newPassword.trim())) {
+        if (passwordEncoder.matches(newPassword.trim(), user.getPassword())) {
             throw new IllegalArgumentException("New password must be different from the current one");
         }
-        int updated = userRepository.updatePassword(adminId, newPassword.trim(), LocalDateTime.now());
+        int updated = userRepository.updatePassword(adminId, passwordEncoder.encode(newPassword.trim()), LocalDateTime.now());
         if (updated == 0) {
             throw new IllegalArgumentException("Update failed — admin account not found");
         }
