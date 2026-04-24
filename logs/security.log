@@ -1,0 +1,48 @@
+2026-04-24 00:03:23.206 INFO  [SECURITY] SECURITY - [ADMIN_LOGIN_OK] Admin authenticated: email=admin@payflow.com id=9
+2026-04-24 00:08:43.878 WARN  [SECURITY] SECURITY - [LOGIN_FAIL_ATTEMPT] Failed attempt #1 of 5 for email=wronguser@test.com
+2026-04-24 00:08:43.879 WARN  [SECURITY] SECURITY - [LOGIN_FAIL] User not found: email=wronguser@test.com ip=0:0:0:0:0:0:0:1
+2026-04-24 00:08:52.017 WARN  [SECURITY] SECURITY - [LOGIN_FAIL_ATTEMPT] Failed attempt #1 of 5 for email=admin@payflow.com
+2026-04-24 00:08:52.018 WARN  [SECURITY] SECURITY - [LOGIN_FAIL] Wrong password: email=admin@payflow.com id=9 ip=0:0:0:0:0:0:0:1
+2026-04-24 00:08:52.240 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=admin@payflow.com role=ADMIN id=9 ip=0:0:0:0:0:0:0:1
+2026-04-24 00:12:16.898 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=client@payflow.com role=CLIENT id=12 ip=0:0:0:0:0:0:0:1
+2026-04-24 00:17:12.368 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=zivak0707@gmail.com role=CLIENT id=7 ip=0:0:0:0:0:0:0:1
+2026-04-24 00:17:12.640 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=dima007@gmail.com role=CLIENT id=10 ip=0:0:0:0:0:0:0:1
+2026-04-24 00:17:59.723 INFO  [SECURITY] SECURITY - [LOGOUT] Client user logged out: userId=null
+2026-04-24 00:18:05.274 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=zivak0707@gmail.com role=CLIENT id=7 ip=0:0:0:0:0:0:0:1
+2026-04-24 00:27:42.060 INFO  [SECURITY] SECURITY - [LOGOUT] Client user logged out: userId=null
+2026-04-24 00:27:54.489 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=dima007@gmail.com role=CLIENT id=10 ip=0:0:0:0:0:0:0:1
+2026-04-24 00:29:47.711 INFO  [SECURITY] SECURITY - [LOGOUT] Client user logged out: userId=10
+2026-04-24 00:30:00.104 WARN  [SECURITY] SECURITY - [LOGIN_FAIL_ATTEMPT] Failed attempt #1 of 5 for email=admin@payflow.com
+2026-04-24 00:30:00.105 WARN  [SECURITY] SECURITY - [LOGIN_FAIL] Wrong password: email=admin@payflow.com id=9 ip=0:0:0:0:0:0:0:1
+2026-04-24 00:30:08.310 WARN  [SECURITY] SECURITY - [LOGIN_FAIL_ATTEMPT] Failed attempt #2 of 5 for email=admin@payflow.com
+2026-04-24 00:30:08.310 WARN  [SECURITY] SECURITY - [LOGIN_FAIL] Wrong password: email=admin@payflow.com id=9 ip=0:0:0:0:0:0:0:1
+2026-04-24 00:30:22.197 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=admin@payflow.com role=ADMIN id=9 ip=0:0:0:0:0:0:0:1
+2026-04-24 00:30:46.298 INFO  [SECURITY] SECURITY - [USER_BLOCK_TOGGLE] Admin id=9 blocked user: id=13 email=platon@gmail.com
+2026-04-24 00:30:49.918 INFO  [SECURITY] SECURITY - [USER_BLOCK_TOGGLE] Admin id=9 unblocked user: id=13 email=platon@gmail.com
+2026-04-24 00:34:37.835 INFO  [SECURITY] SECURITY - [LOGOUT] Admin logged out: email=admin@payflow.com id=9
+2026-04-24 00:34:52.301 WARN  [SECURITY] SECURITY - [ADMIN_LOGIN_FAIL] Admin login failed: email=manager@payflow.com reason=not_found_or_not_admin
+2026-04-24 00:35:11.793 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=manager@payflow.com role=MANAGER id=11 ip=0:0:0:0:0:0:0:1
+2026-04-24 00:35:33.620 INFO  [SECURITY] SECURITY - [LOGOUT] Manager logged out: email=manager@payflow.com id=11
+2026-04-24 00:35:51.648 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=client@payflow.com role=CLIENT id=12 ip=0:0:0:0:0:0:0:1
+2026-04-24 00:37:42.510 INFO  [SECURITY] SECURITY - [LOGOUT] Client user logged out: userId=12
+2026-04-24 00:37:48.318 WARN  [SECURITY] SECURITY - [LOGIN_FAIL_ATTEMPT] Failed attempt #1 of 5 for email=admin@payflow.com
+2026-04-24 00:37:48.318 WARN  [SECURITY] SECURITY - [LOGIN_FAIL] Wrong password: email=admin@payflow.com id=9 ip=0:0:0:0:0:0:0:1
+2026-04-24 00:37:54.665 WARN  [SECURITY] SECURITY - [LOGIN_FAIL_ATTEMPT] Failed attempt #2 of 5 for email=admin@payflow.com
+2026-04-24 00:37:54.665 WARN  [SECURITY] SECURITY - [LOGIN_FAIL] Wrong password: email=admin@payflow.com id=9 ip=0:0:0:0:0:0:0:1
+2026-04-24 00:37:59.545 WARN  [SECURITY] SECURITY - [LOGIN_FAIL_ATTEMPT] Failed attempt #3 of 5 for email=admin@payflow.com
+2026-04-24 00:37:59.545 WARN  [SECURITY] SECURITY - [LOGIN_FAIL] Wrong password: email=admin@payflow.com id=9 ip=0:0:0:0:0:0:0:1
+2026-04-24 00:38:04.785 WARN  [SECURITY] SECURITY - [LOGIN_FAIL_ATTEMPT] Failed attempt #4 of 5 for email=admin@payflow.com
+2026-04-24 00:38:04.785 WARN  [SECURITY] SECURITY - [LOGIN_FAIL] Wrong password: email=admin@payflow.com id=9 ip=0:0:0:0:0:0:0:1
+2026-04-24 00:38:10.460 WARN  [SECURITY] SECURITY - [BRUTE_FORCE_LOCKOUT] Account locked after 5 attempts: email=admin@payflow.com lockedUntil=2026-04-24T00:53:10.460207100
+2026-04-24 00:38:10.460 WARN  [SECURITY] SECURITY - [LOGIN_FAIL] Wrong password: email=admin@payflow.com id=9 ip=0:0:0:0:0:0:0:1
+2026-04-24 00:38:15.901 WARN  [SECURITY] SECURITY - [BRUTE_FORCE_BLOCK] Login blocked: email=admin@payflow.com ip=0:0:0:0:0:0:0:1 minutesLeft=15
+2026-04-24 00:38:44.084 WARN  [SECURITY] SECURITY - [BRUTE_FORCE_BLOCK] Login blocked: email=admin@payflow.com ip=0:0:0:0:0:0:0:1 minutesLeft=15
+2026-04-24 00:44:57.791 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=zivak0707@gmail.com role=CLIENT id=7 ip=0:0:0:0:0:0:0:1
+2026-04-24 00:48:39.614 INFO  [SECURITY] SECURITY - [LOGOUT] Client user logged out: userId=7
+2026-04-24 00:49:56.609 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=tanya123@gmail.com role=CLIENT id=14 ip=0:0:0:0:0:0:0:1
+2026-04-24 01:03:28.533 INFO  [SECURITY] SECURITY - [LOGOUT] Client user logged out: userId=14
+2026-04-24 01:03:39.019 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=dima007@gmail.com role=CLIENT id=10 ip=0:0:0:0:0:0:0:1
+2026-04-24 01:05:01.760 INFO  [SECURITY] SECURITY - [LOGOUT] Client user logged out: userId=10
+2026-04-24 01:05:09.096 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=zivak0707@gmail.com role=CLIENT id=7 ip=0:0:0:0:0:0:0:1
+2026-04-24 01:06:08.780 INFO  [SECURITY] SECURITY - [LOGOUT] Client user logged out: userId=7
+2026-04-24 01:06:18.508 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=tanya123@gmail.com role=CLIENT id=14 ip=0:0:0:0:0:0:0:1
