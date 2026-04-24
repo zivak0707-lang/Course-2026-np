@@ -13655,3 +13655,20 @@ Unconditional classes:
 2026-04-24 15:59:43.463 INFO  [http-nio-8080-exec-4] u.c.k.course2026np.controller.PaymentController - Transactions page accessed by user: zivak0707@gmail.com (page: 0, size: 10)
 2026-04-24 16:00:36.047 INFO  [http-nio-8080-exec-7] SECURITY - [ADMIN_LOGIN_OK] Admin authenticated: email=admin@payflow.com id=9
 2026-04-24 16:02:47.858 INFO  [http-nio-8080-exec-5] SECURITY - [MANAGER_LOGIN_OK] Manager authenticated: email=manager@payflow.com id=11
+2026-04-24 19:43:20.343 DEBUG [http-nio-8080-exec-4] u.c.kisit.course2026np.service.LoginAttemptService - [LOGIN_ATTEMPTS_CLEARED] Cleared failed attempts for email=zivak0707@gmail.com
+2026-04-24 19:43:20.344 INFO  [http-nio-8080-exec-4] SECURITY - [LOGIN_OK] Successful login: email=zivak0707@gmail.com role=CLIENT id=7 ip=0:0:0:0:0:0:0:1
+2026-04-24 19:43:29.579 INFO  [http-nio-8080-exec-10] u.c.k.course2026np.controller.PaymentController - Transactions page accessed by user: zivak0707@gmail.com (page: 0, size: 10)
+2026-04-24 19:43:31.992 INFO  [http-nio-8080-exec-2] u.c.k.course2026np.controller.PaymentController - Transactions page accessed by user: zivak0707@gmail.com (page: 1, size: 10)
+2026-04-24 19:43:39.144 DEBUG [http-nio-8080-exec-1] ua.com.kisit.course2026np.service.AccountService - Пошук рахунку за номером: 45219387570684136892
+2026-04-24 19:43:52.340 INFO  [http-nio-8080-exec-4] ua.com.kisit.course2026np.service.PaymentService - [TRANSFER_OK] Transfer completed: senderAccountId=28 recipientAccountId=31 amount=127 txId=TXN17770490322852751
+2026-04-24 19:43:52.374 INFO  [http-nio-8080-exec-4] u.c.kisit.course2026np.controller.ClientController - [PAYMENT_SUBMIT_OK] User id=7 completed TRANSFER amount=127 accountId=28 txId=TXN17770490322852751
+2026-04-24 19:44:16.850 INFO  [http-nio-8080-exec-8] SECURITY - [ADMIN_LOGIN_OK] Admin authenticated: email=admin@payflow.com id=9
+2026-04-24 19:50:36.669 DEBUG [http-nio-8080-exec-3] u.c.kisit.course2026np.service.LoginAttemptService - [LOGIN_ATTEMPTS_CLEARED] Cleared failed attempts for email=zivak0707@gmail.com
+2026-04-24 19:50:36.669 INFO  [http-nio-8080-exec-3] SECURITY - [LOGIN_OK] Successful login: email=zivak0707@gmail.com role=CLIENT id=7 ip=0:0:0:0:0:0:0:1
+2026-04-24 19:50:40.773 INFO  [http-nio-8080-exec-5] u.c.k.course2026np.controller.PaymentController - Transactions page accessed by user: zivak0707@gmail.com (page: 0, size: 10)
+2026-04-24 19:50:43.837 INFO  [http-nio-8080-exec-8] u.c.k.course2026np.controller.PaymentController - Transactions page accessed by user: zivak0707@gmail.com (page: 0, size: 10)
+2026-04-24 22:42:58.569 INFO  [SpringApplicationShutdownHook] org.springframework.boot.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2026-04-24 22:42:58.591 INFO  [tomcat-shutdown] org.springframework.boot.tomcat.GracefulShutdown - Graceful shutdown complete
+2026-04-24 22:42:58.607 INFO  [SpringApplicationShutdownHook] o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-24 22:42:58.613 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-3 - Shutdown initiated...
+2026-04-24 22:42:58.619 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-3 - Shutdown completed.
