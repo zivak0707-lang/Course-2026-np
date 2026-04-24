@@ -81,6 +81,19 @@
 
         <div class="container mx-auto max-w-7xl space-y-8 animate-fade-in">
 
+            <#if successMessage??>
+                <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-center gap-3 text-sm font-medium text-emerald-800">
+                    <i data-lucide="check-circle" class="h-4 w-4 flex-shrink-0"></i>
+                    ${successMessage}
+                </div>
+            </#if>
+            <#if errorMessage??>
+                <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 flex items-center gap-3 text-sm font-medium text-red-800">
+                    <i data-lucide="alert-circle" class="h-4 w-4 flex-shrink-0"></i>
+                    ${errorMessage}
+                </div>
+            </#if>
+
             <!-- Page Header -->
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -159,6 +172,7 @@
                                     <option value="COMPLETED" <#if selectedStatus == "COMPLETED">selected</#if>>Completed</option>
                                     <option value="PENDING" <#if selectedStatus == "PENDING">selected</#if>>Pending</option>
                                     <option value="FAILED" <#if selectedStatus == "FAILED">selected</#if>>Failed</option>
+                                    <option value="CANCELLED" <#if selectedStatus == "CANCELLED">selected</#if>>Cancelled</option>
                                 </select>
                             </div>
 
@@ -274,6 +288,11 @@
                                                 <span class="mr-1.5 h-1.5 w-1.5 rounded-full bg-yellow-600"></span>
                                                 Pending
                                             </span>
+                                        <#elseif payment.status?? && payment.status.name() == 'CANCELLED'>
+                                            <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-600 border border-gray-300">
+                                                <span class="mr-1.5 h-1.5 w-1.5 rounded-full bg-gray-500"></span>
+                                                Cancelled
+                                            </span>
                                         <#else>
                                             <span class="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700 border border-red-200">
                                                 <span class="mr-1.5 h-1.5 w-1.5 rounded-full bg-red-600"></span>
@@ -284,13 +303,24 @@
 
                                     <!-- Actions -->
                                     <td class="p-6 align-middle text-center">
-                                        <button
-                                            onclick="showPaymentDetails('${payment.id?c}', '${payment.transactionId!""}', '${payment.description!"No description"}', '${payment.type.name()}', '${payment.amount}', '${payment.status.name()}', '${payment.senderAccount!"N/A"}', '${payment.recipientAccount!"N/A"}', '<#if payment.createdAt??>${payment.createdAt.dayOfMonth?string["00"]}.${payment.createdAt.monthValue?string["00"]}.${payment.createdAt.year?c} ${payment.createdAt.hour?string["00"]}:${payment.createdAt.minute?string["00"]}<#else>N/A</#if>', '${payment.errorMessage!""}')"
-                                            class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all"
-                                        >
-                                            <i data-lucide="eye" class="mr-1 h-3 w-3"></i>
-                                            Details
-                                        </button>
+                                        <div class="inline-flex items-center gap-2">
+                                            <button
+                                                onclick="showPaymentDetails('${payment.id?c}', '${payment.transactionId!""}', '${payment.description!"No description"}', '${payment.type.name()}', '${payment.amount}', '${payment.status.name()}', '${payment.senderAccount!"N/A"}', '${payment.recipientAccount!"N/A"}', '<#if payment.createdAt??>${payment.createdAt.dayOfMonth?string["00"]}.${payment.createdAt.monthValue?string["00"]}.${payment.createdAt.year?c} ${payment.createdAt.hour?string["00"]}:${payment.createdAt.minute?string["00"]}<#else>N/A</#if>', '${payment.errorMessage!""}')"
+                                                class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all"
+                                            >
+                                                <i data-lucide="eye" class="mr-1 h-3 w-3"></i>
+                                                Details
+                                            </button>
+                                            <#if payment.status?? && payment.status.name() == 'PENDING'>
+                                                <button
+                                                    onclick="openClientCancelModal('${payment.id?c}', '${payment.transactionId!""}')"
+                                                    class="inline-flex items-center justify-center rounded-lg border border-orange-300 bg-orange-50 px-3 py-1.5 text-xs font-medium text-orange-700 shadow-sm hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-all"
+                                                >
+                                                    <i data-lucide="x-circle" class="mr-1 h-3 w-3"></i>
+                                                    Cancel
+                                                </button>
+                                            </#if>
+                                        </div>
                                     </td>
                                 </tr>
                             </#list>
@@ -515,6 +545,8 @@
             statusEl.innerHTML = '<span class="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700 border border-emerald-200"><span class="mr-1.5 h-2 w-2 rounded-full bg-emerald-600"></span>Completed</span>';
         } else if (status === 'PENDING') {
             statusEl.innerHTML = '<span class="inline-flex items-center rounded-full bg-yellow-50 px-3 py-1 text-sm font-semibold text-yellow-700 border border-yellow-200"><span class="mr-1.5 h-2 w-2 rounded-full bg-yellow-600"></span>Pending</span>';
+        } else if (status === 'CANCELLED') {
+            statusEl.innerHTML = '<span class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-semibold text-gray-600 border border-gray-300"><span class="mr-1.5 h-2 w-2 rounded-full bg-gray-500"></span>Cancelled</span>';
         } else {
             statusEl.innerHTML = '<span class="inline-flex items-center rounded-full bg-red-50 px-3 py-1 text-sm font-semibold text-red-700 border border-red-200"><span class="mr-1.5 h-2 w-2 rounded-full bg-red-600"></span>Failed</span>';
         }
@@ -559,8 +591,61 @@
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closePaymentModal();
+            closeCancelModal();
         }
     });
+
+    // ── Client cancel modal ──
+    function openClientCancelModal(paymentId, txnId) {
+        document.getElementById('cancel-payment-id').value = paymentId;
+        document.getElementById('cancel-txn-label').textContent = txnId ? 'Transaction: ' + txnId : '';
+        document.getElementById('cancel-reason').value = '';
+        document.getElementById('client-cancel-modal').classList.remove('hidden');
+    }
+
+    function closeCancelModal() {
+        document.getElementById('client-cancel-modal').classList.add('hidden');
+    }
 </script>
+
+<!-- Client Cancel Modal -->
+<div id="client-cancel-modal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex min-h-screen items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onclick="closeCancelModal()"></div>
+        <div class="relative bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <div class="flex items-center justify-between mb-5">
+                <h2 class="text-xl font-bold text-gray-900">Cancel Transaction</h2>
+                <button onclick="closeCancelModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i data-lucide="x" class="h-5 w-5"></i>
+                </button>
+            </div>
+            <p class="text-sm text-gray-600 mb-1">
+                This will mark the transaction as <strong>Cancelled</strong>. No money will move.
+            </p>
+            <p id="cancel-txn-label" class="text-xs text-gray-400 font-mono mb-5"></p>
+            <form method="POST" action="/dashboard/transactions/cancel">
+                <input type="hidden" name="paymentId" id="cancel-payment-id">
+                <div class="mb-5">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Reason <span class="text-gray-400 font-normal">(optional)</span>
+                    </label>
+                    <input type="text" name="reason" id="cancel-reason" maxlength="500"
+                           placeholder="e.g. Entered wrong amount, changed my mind…"
+                           class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="closeCancelModal()"
+                            class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all">
+                        Back
+                    </button>
+                    <button type="submit"
+                            class="inline-flex items-center justify-center rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-all">
+                        Confirm Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 </body>
 </html>

@@ -4,12 +4,15 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ua.com.kisit.course2026np.entity.*;
 import ua.com.kisit.course2026np.repository.UserRepository;
 import ua.com.kisit.course2026np.service.AccountService;
@@ -26,6 +29,8 @@ import java.util.List;
 @Controller
 @RequiredArgsConstructor
 public class PaymentController {
+
+    private static final Logger securityLog = LoggerFactory.getLogger("SECURITY");
 
     private final PaymentService paymentService;
     private final AccountService accountService;
@@ -123,6 +128,41 @@ public class PaymentController {
                 user.getEmail(), page, size);
 
         return "client/transactions";
+    }
+
+    // ============= CLIENT: CANCEL OWN PENDING TRANSACTION =============
+
+    @PostMapping("/dashboard/transactions/cancel")
+    public String cancelTransaction(
+            @RequestParam Long paymentId,
+            @RequestParam(required = false) String reason,
+            HttpSession session,
+            RedirectAttributes redirectAttributes
+    ) {
+        User user = getCurrentUser(session);
+        try {
+            Payment payment = paymentService.getPaymentById(paymentId)
+                    .orElseThrow(() -> new IllegalArgumentException("Transaction not found"));
+
+            // Ownership check: payment must belong to this user
+            if (payment.getAccount() == null
+                    || payment.getAccount().getCreditCard() == null
+                    || !payment.getAccount().getCreditCard().getUser().getId().equals(user.getId())) {
+                securityLog.warn("[ACCESS_DENIED_403] User id={} attempted to cancel payment id={} belonging to another user",
+                        user.getId(), paymentId);
+                throw new IllegalArgumentException("You can only cancel your own transactions");
+            }
+
+            String cancelledBy = "Client: " + user.getEmail() + " (id=" + user.getId() + ")";
+            paymentService.cancelPayment(paymentId, cancelledBy, reason);
+            log.info("[CANCEL_OK] Client id={} cancelled paymentId={} reason={}", user.getId(), paymentId, reason);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Transaction #" + paymentId + " has been cancelled");
+        } catch (IllegalArgumentException e) {
+            log.warn("[CANCEL_FAIL] userId={} paymentId={} reason={}", user.getId(), paymentId, e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/dashboard/transactions";
     }
 
     // ============= REST API ENDPOINTS =============

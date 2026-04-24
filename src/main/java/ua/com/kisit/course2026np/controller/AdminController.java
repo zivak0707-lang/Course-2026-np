@@ -222,6 +222,42 @@ public class AdminController {
         return "redirect:/admin/transactions";
     }
 
+    @PostMapping("/transactions/cancel")
+    public String cancelTransaction(@RequestParam Long paymentId,
+                                    @RequestParam(required = false) String reason,
+                                    RedirectAttributes redirectAttributes,
+                                    HttpSession session) {
+        if (isNotAuthenticated(session)) return "redirect:/admin/login";
+        User admin = (User) session.getAttribute("adminUser");
+        Long adminId = admin != null ? admin.getId() : null;
+        try {
+            adminService.cancelTransaction(paymentId, adminId, reason);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Transaction #" + paymentId + " has been cancelled");
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/transactions";
+    }
+
+    @PostMapping("/transactions/refund")
+    public String refundTransaction(@RequestParam Long paymentId,
+                                    @RequestParam(required = false) String reason,
+                                    RedirectAttributes redirectAttributes,
+                                    HttpSession session) {
+        if (isNotAuthenticated(session)) return "redirect:/admin/login";
+        User admin = (User) session.getAttribute("adminUser");
+        Long adminId = admin != null ? admin.getId() : null;
+        try {
+            adminService.refundTransaction(paymentId, adminId, reason);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Refund issued for transaction #" + paymentId);
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/transactions";
+    }
+
     // ─────────────────────────────────────────────
     //  PLACEHOLDER PAGES
     // ─────────────────────────────────────────────

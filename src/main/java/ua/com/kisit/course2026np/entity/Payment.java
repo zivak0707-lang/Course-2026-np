@@ -69,6 +69,19 @@ public class Payment {
     @Column(name = "error_message", length = 500)
     private String errorMessage;
 
+    @Column(name = "cancelled_by", length = 255)
+    private String cancelledBy;
+
+    @Column(name = "cancelled_at")
+    private LocalDateTime cancelledAt;
+
+    @Column(name = "cancel_reason", length = 500)
+    private String cancelReason;
+
+    // Links a refund transaction back to the original payment it reverses
+    @Column(name = "original_payment_id")
+    private Long originalPaymentId;
+
     @Column(nullable = false, updatable = false, name = "created_at")
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -99,6 +112,14 @@ public class Payment {
         this.completedAt = LocalDateTime.now();
     }
 
+    public void cancel(String cancelledBy, String cancelReason) {
+        this.status = PaymentStatus.CANCELLED;
+        this.cancelledBy = cancelledBy;
+        this.cancelledAt = LocalDateTime.now();
+        this.cancelReason = cancelReason;
+        this.completedAt = LocalDateTime.now();
+    }
+
     public String getCreatedAtFormatted() {
         if (createdAt == null) return "";
         return createdAt.format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
@@ -114,5 +135,9 @@ public class Payment {
 
     public boolean isPending() {
         return this.status == PaymentStatus.PENDING;
+    }
+
+    public boolean isCancelled() {
+        return this.status == PaymentStatus.CANCELLED;
     }
 }

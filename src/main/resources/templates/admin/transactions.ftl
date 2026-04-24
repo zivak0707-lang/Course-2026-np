@@ -68,6 +68,10 @@
         .btn-approve:hover{background:#dcfce7}
         .btn-reject{border-color:#fecaca;background:#fff5f5;color:#dc2626}
         .btn-reject:hover{background:#fee2e2}
+        .btn-cancel{border-color:#fed7aa;background:#fff7ed;color:#c2410c}
+        .btn-cancel:hover{background:#ffedd5}
+        .btn-refund{border-color:#c7d2fe;background:#eef2ff;color:#4338ca}
+        .btn-refund:hover{background:#e0e7ff}
         .page-btn{width:34px;height:34px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:600;color:#374151;text-decoration:none;transition:background .15s}
         .page-btn:hover{background:#f3f4f6;color:#111827}
         .page-btn.active{background:#4f46e5;border-color:#4f46e5;color:#fff}
@@ -222,6 +226,7 @@
                                     <#else>—</#if>
                                 </td>
                                 <td class="text-center">
+                                    <#assign isCompleted = p.status?? && p.status.name() == "COMPLETED">
                                     <#if isPending>
                                         <div class="d-flex align-items-center justify-content-center gap-1">
                                             <form method="post" action="/admin/transactions/approve" style="margin:0">
@@ -236,7 +241,16 @@
                                                     <i class="bi bi-x-lg"></i>
                                                 </button>
                                             </form>
+                                            <button type="button" class="btn-action btn-cancel" title="Cancel"
+                                                    onclick="openCancelModal(${p.id})">
+                                                <i class="bi bi-slash-circle"></i>
+                                            </button>
                                         </div>
+                                    <#elseif isCompleted>
+                                        <button type="button" class="btn-action btn-refund" title="Refund"
+                                                onclick="openRefundModal(${p.id}, '${p.transactionId!""}')">
+                                            <i class="bi bi-arrow-counterclockwise"></i>
+                                        </button>
                                     <#else>
                                         <span class="text-muted" style="font-size:.75rem">—</span>
                                     </#if>
@@ -285,6 +299,87 @@
     </div>
 </div>
 
+<!-- Cancel Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:440px">
+        <div class="modal-content" style="border-radius:14px;border:none;box-shadow:0 10px 40px rgba(0,0,0,.15)">
+            <div class="modal-header" style="border-bottom:1px solid #f3f4f6;padding:20px 24px 16px">
+                <h5 class="modal-title" style="font-size:1rem;font-weight:700;color:#111827">
+                    <i class="bi bi-slash-circle text-warning me-2"></i>Cancel Transaction
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="/admin/transactions/cancel">
+                <div class="modal-body" style="padding:20px 24px">
+                    <input type="hidden" name="paymentId" id="cancelPaymentId">
+                    <p style="font-size:.88rem;color:#374151;margin-bottom:16px">
+                        This will mark the transaction as <strong>CANCELLED</strong>. No money will move.
+                    </p>
+                    <label style="font-size:.82rem;font-weight:600;color:#374151;display:block;margin-bottom:6px">
+                        Reason <span style="color:#9ca3af;font-weight:400">(optional)</span>
+                    </label>
+                    <input type="text" name="reason" maxlength="500" placeholder="e.g. Duplicate payment, Customer request…"
+                           class="form-control form-control-sm">
+                </div>
+                <div class="modal-footer" style="border-top:1px solid #f3f4f6;padding:16px 24px;gap:8px">
+                    <button type="button" class="btn btn-sm btn-light rounded-3 px-4" data-bs-dismiss="modal">Back</button>
+                    <button type="submit" class="btn btn-sm rounded-3 px-4"
+                            style="background:#c2410c;color:#fff;border:none;font-weight:600">
+                        Confirm Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Refund Modal -->
+<div class="modal fade" id="refundModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:440px">
+        <div class="modal-content" style="border-radius:14px;border:none;box-shadow:0 10px 40px rgba(0,0,0,.15)">
+            <div class="modal-header" style="border-bottom:1px solid #f3f4f6;padding:20px 24px 16px">
+                <h5 class="modal-title" style="font-size:1rem;font-weight:700;color:#111827">
+                    <i class="bi bi-arrow-counterclockwise text-primary me-2"></i>Issue Refund
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="/admin/transactions/refund">
+                <div class="modal-body" style="padding:20px 24px">
+                    <input type="hidden" name="paymentId" id="refundPaymentId">
+                    <p style="font-size:.88rem;color:#374151;margin-bottom:4px">
+                        A new <strong>reverse transaction</strong> will be created and the balance adjusted.
+                        The original transaction is not modified.
+                    </p>
+                    <p id="refundTxnLabel" style="font-size:.78rem;color:#6b7280;margin-bottom:16px"></p>
+                    <label style="font-size:.82rem;font-weight:600;color:#374151;display:block;margin-bottom:6px">
+                        Reason <span style="color:#9ca3af;font-weight:400">(optional)</span>
+                    </label>
+                    <input type="text" name="reason" maxlength="500" placeholder="e.g. Overcharged, Service not delivered…"
+                           class="form-control form-control-sm">
+                </div>
+                <div class="modal-footer" style="border-top:1px solid #f3f4f6;padding:16px 24px;gap:8px">
+                    <button type="button" class="btn btn-sm btn-light rounded-3 px-4" data-bs-dismiss="modal">Back</button>
+                    <button type="submit" class="btn btn-sm rounded-3 px-4"
+                            style="background:#4338ca;color:#fff;border:none;font-weight:600">
+                        Issue Refund
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script>
+    function openCancelModal(paymentId) {
+        document.getElementById('cancelPaymentId').value = paymentId;
+        new bootstrap.Modal(document.getElementById('cancelModal')).show();
+    }
+    function openRefundModal(paymentId, txnId) {
+        document.getElementById('refundPaymentId').value = paymentId;
+        document.getElementById('refundTxnLabel').textContent = txnId ? 'Transaction: ' + txnId : '';
+        new bootstrap.Modal(document.getElementById('refundModal')).show();
+    }
+</script>
 </body>
 </html>

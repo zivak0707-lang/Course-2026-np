@@ -2,6 +2,8 @@ package ua.com.kisit.course2026np.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +22,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Transactional
 public class PaymentService {
+
+    private static final Logger securityLog = LoggerFactory.getLogger("SECURITY");
 
     private final PaymentRepository paymentRepository;
     private final AccountRepository accountRepository;
@@ -172,6 +176,112 @@ public class PaymentService {
         return byAccountNumber.orElseGet(() -> creditCardRepository.findByCardNumber(cleaned)
                 .flatMap(accountRepository::findByCreditCard)
                 .orElse(null));
+    }
+
+    // ============= CANCELLATION =============
+
+    @Transactional
+    public Payment cancelPayment(Long paymentId, String cancelledBy, String cancelReason) {
+        Payment p = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new IllegalArgumentException("Transaction not found: " + paymentId));
+        if (p.getStatus() != PaymentStatus.PENDING) {
+            throw new IllegalArgumentException("Only PENDING transactions can be cancelled");
+        }
+        p.cancel(cancelledBy, cancelReason != null && !cancelReason.isBlank() ? cancelReason : "No reason provided");
+        Payment saved = paymentRepository.save(p);
+        log.info("[CANCEL_OK] paymentId={} amount={} cancelledBy={} reason={}",
+                paymentId, p.getAmount(), cancelledBy, cancelReason);
+        securityLog.info("[CANCEL_OK] paymentId={} amount={} cancelledBy={} reason={}",
+                paymentId, p.getAmount(), cancelledBy, cancelReason);
+        return saved;
+    }
+
+    // ============= REFUND =============
+
+    @Transactional
+    public Payment refundPayment(Long paymentId, String refundedBy, String reason) {
+        Payment original = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new IllegalArgumentException("Transaction not found: " + paymentId));
+
+        if (original.getStatus() != PaymentStatus.COMPLETED) {
+            throw new IllegalArgumentException("Only COMPLETED transactions can be refunded");
+        }
+        if (paymentRepository.existsByOriginalPaymentId(paymentId)) {
+            throw new IllegalArgumentException("Transaction #" + paymentId + " has already been refunded");
+        }
+
+        Account primaryAccount = original.getAccount();
+        if (primaryAccount == null) {
+            throw new IllegalArgumentException("Transaction has no associated account");
+        }
+        if (primaryAccount.getStatus() == AccountStatus.BLOCKED) {
+            throw new IllegalArgumentException("Account " + primaryAccount.getAccountNumber() + " is blocked");
+        }
+
+        String refundNote = reason != null && !reason.isBlank() ? " — " + reason : "";
+        String originalRef = original.getTransactionId() != null ? original.getTransactionId() : "#" + paymentId;
+
+        // TRANSFER: reverse both sides — add back to sender, deduct from recipient
+        if (original.getType() == PaymentType.TRANSFER && original.getRecipientAccount() != null) {
+            Account recipientAccount = accountRepository.findByAccountNumber(original.getRecipientAccount())
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Recipient account not found: " + original.getRecipientAccount()));
+            if (recipientAccount.getStatus() == AccountStatus.BLOCKED) {
+                throw new IllegalArgumentException("Recipient account " + recipientAccount.getAccountNumber() + " is blocked");
+            }
+            if (recipientAccount.getBalance().compareTo(original.getAmount()) < 0) {
+                throw new IllegalArgumentException("Recipient has insufficient funds for refund");
+            }
+
+            // Deduct from recipient
+            recipientAccount.setBalance(recipientAccount.getBalance().subtract(original.getAmount()));
+            accountRepository.save(recipientAccount);
+
+            Payment recipientDebit = Payment.builder()
+                    .account(recipientAccount)
+                    .amount(original.getAmount())
+                    .type(PaymentType.PAYMENT)
+                    .description("Refund reversal for " + originalRef + refundNote)
+                    .senderAccount(recipientAccount.getAccountNumber())
+                    .recipientAccount(primaryAccount.getAccountNumber())
+                    .originalPaymentId(paymentId)
+                    .build();
+            recipientDebit.complete();
+            paymentRepository.save(recipientDebit);
+        }
+
+        // Add back to primary account (for TRANSFER and PAYMENT); deduct for REPLENISHMENT
+        if (original.getType() == PaymentType.REPLENISHMENT) {
+            if (primaryAccount.getBalance().compareTo(original.getAmount()) < 0) {
+                throw new IllegalArgumentException("Insufficient funds on account for replenishment refund");
+            }
+            primaryAccount.setBalance(primaryAccount.getBalance().subtract(original.getAmount()));
+        } else {
+            primaryAccount.setBalance(primaryAccount.getBalance().add(original.getAmount()));
+        }
+        accountRepository.save(primaryAccount);
+
+        PaymentType refundType = original.getType() == PaymentType.REPLENISHMENT
+                ? PaymentType.PAYMENT
+                : PaymentType.REPLENISHMENT;
+
+        Payment refund = Payment.builder()
+                .account(primaryAccount)
+                .amount(original.getAmount())
+                .type(refundType)
+                .description("Refund for " + originalRef + refundNote)
+                .senderAccount(original.getSenderAccount())
+                .recipientAccount(original.getRecipientAccount())
+                .originalPaymentId(paymentId)
+                .build();
+        refund.complete();
+        Payment saved = paymentRepository.save(refund);
+
+        log.info("[REFUND_OK] originalPaymentId={} refundId={} amount={} type={} refundedBy={}",
+                paymentId, saved.getId(), original.getAmount(), original.getType(), refundedBy);
+        securityLog.info("[REFUND_OK] originalPaymentId={} refundId={} amount={} refundedBy={}",
+                paymentId, saved.getId(), original.getAmount(), refundedBy);
+        return saved;
     }
 
     // ============= READ METHODS =============

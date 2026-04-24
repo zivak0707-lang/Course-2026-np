@@ -113,4 +113,10 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             "WHERE p.account.creditCard.user = :user " +
             "AND p.status = :status")
     long countByUserAndStatus(@Param("user") User user, @Param("status") PaymentStatus status);
+
+    /**
+     * Check whether a refund already exists for the given original payment.
+     * Used to enforce the one-refund-per-transaction rule.
+     */
+    boolean existsByOriginalPaymentId(Long originalPaymentId);
 }

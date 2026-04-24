@@ -12,6 +12,7 @@ import ua.com.kisit.course2026np.dto.TransactionPage;
 import ua.com.kisit.course2026np.entity.*;
 import ua.com.kisit.course2026np.repository.PaymentRepository;
 import ua.com.kisit.course2026np.repository.UserRepository;
+import ua.com.kisit.course2026np.service.PaymentService;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -29,6 +30,7 @@ public class AdminService {
     private final PaymentRepository paymentRepository;
     private final DashboardService dashboardService;
     private final PasswordEncoder passwordEncoder;
+    private final PaymentService paymentService;
 
     // ── Auth ──────────────────────────────────────────────────────────────────
 
@@ -161,6 +163,26 @@ public class AdminService {
         paymentRepository.save(p);
         log.info("[ADMIN_ACTION] Transaction {} → {}: paymentId={} amount={} type={} adminId={}",
                 oldStatus, newStatus, paymentId, p.getAmount(), p.getType(), adminId);
+    }
+
+    @Transactional
+    public void cancelTransaction(Long paymentId, Long adminId, String reason) {
+        User admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new IllegalArgumentException("Admin not found"));
+        String cancelledBy = "Admin: " + admin.getEmail() + " (id=" + adminId + ")";
+        paymentService.cancelPayment(paymentId, cancelledBy, reason);
+        log.info("[ADMIN_ACTION] Admin id={} cancelled paymentId={} reason={}", adminId, paymentId, reason);
+        securityLog.info("[ADMIN_ACTION] Admin id={} cancelled paymentId={} reason={}", adminId, paymentId, reason);
+    }
+
+    @Transactional
+    public void refundTransaction(Long paymentId, Long adminId, String reason) {
+        User admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new IllegalArgumentException("Admin not found"));
+        String refundedBy = "Admin: " + admin.getEmail() + " (id=" + adminId + ")";
+        paymentService.refundPayment(paymentId, refundedBy, reason);
+        log.info("[ADMIN_ACTION] Admin id={} issued refund for paymentId={} reason={}", adminId, paymentId, reason);
+        securityLog.info("[ADMIN_ACTION] Admin id={} issued refund for paymentId={} reason={}", adminId, paymentId, reason);
     }
 
     // ── Settings ──────────────────────────────────────────────────────────────
