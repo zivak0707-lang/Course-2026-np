@@ -165,23 +165,33 @@ function _updateCardTileState(cardId, isActive) {
    MODAL 2 — CHANGE PIN
    ════════════════════════════════════════════════════════════ */
 
-function openPinModal(cardId) {
+function openPinModal(cardId, hasPin) {
   _activeCardId = cardId;
 
-  // Reset fields
-  document.getElementById('pin-new').value     = '';
-  document.getElementById('pin-confirm').value = '';
+  const p0wrap = document.getElementById('pin-current-wrap');
+  const p0     = document.getElementById('pin-current');
+  const p1     = document.getElementById('pin-new');
+  const p2     = document.getElementById('pin-confirm');
+
+  if (p0) p0.value = '';
+  if (p1) p1.value = '';
+  if (p2) p2.value = '';
+
+  // Show current PIN field only if card already has a PIN
+  if (p0wrap) p0wrap.style.display = String(hasPin) === 'true' ? 'block' : 'none';
 
   // Reset eye-toggle icons
-  ['pin-new', 'pin-confirm'].forEach(id => {
-    const input = document.getElementById(id);
-    input.type  = 'password';
-    const eye   = input.parentElement.querySelector('.pf-eye-btn i');
+  [p1, p2].filter(Boolean).forEach(input => {
+    input.type = 'password';
+    const eye  = input.parentElement?.querySelector('.pf-eye-btn i');
     if (eye) eye.className = 'bi bi-eye';
   });
 
   openModal('modal-pin');
-  setTimeout(() => document.getElementById('pin-new').focus(), 120);
+  setTimeout(() => {
+    if (String(hasPin) === 'true' && p0) p0.focus();
+    else if (p1) p1.focus();
+  }, 120);
 }
 
 /** Toggle PIN field between text and password. */
@@ -199,7 +209,7 @@ function togglePinVisibility(inputId, btn) {
 
 // Restrict PIN inputs to digits only
 document.addEventListener('DOMContentLoaded', () => {
-  ['pin-new', 'pin-confirm'].forEach(id => {
+  ['pin-current', 'pin-new', 'pin-confirm'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.addEventListener('input', () => {
@@ -209,6 +219,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function submitChangePin() {
+  const p0wrap     = document.getElementById('pin-current-wrap');
+  const currentPin = document.getElementById('pin-current')?.value.trim() ?? '';
   const newPin     = document.getElementById('pin-new').value.trim();
   const confirmPin = document.getElementById('pin-confirm').value.trim();
   const errEl      = document.getElementById('pin-error');
@@ -217,9 +229,15 @@ async function submitChangePin() {
 
   errEl.style.display = 'none';
 
+  const currentPinRequired = p0wrap && p0wrap.style.display !== 'none';
+
   // Client-side validation
+  if (currentPinRequired && !/^\d{4}$/.test(currentPin)) {
+    _showError('pin-error', 'Current PIN must be exactly 4 digits.');
+    return;
+  }
   if (!/^\d{4}$/.test(newPin)) {
-    _showError('pin-error', 'PIN must be exactly 4 digits.');
+    _showError('pin-error', 'New PIN must be exactly 4 digits.');
     return;
   }
   if (newPin !== confirmPin) {
@@ -230,10 +248,12 @@ async function submitChangePin() {
   _setLoading(btnText, spinner, true);
 
   try {
+    const body = { newPin, confirmPin };
+    if (currentPinRequired && currentPin) body.currentPin = currentPin;
     const res  = await fetch(`/cards/${_activeCardId}/change-pin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ newPin, confirmPin })
+      body: JSON.stringify(body)
     });
     const data = await res.json();
 

@@ -712,10 +712,11 @@
     function closeDeleteModal() { closeModal('deleteCardModal'); }
 
     // ── CARD ACTIONS MODAL ─────────────────────────────────────
-    function openCardActionsModal(cardId, isActive, spendingLimit) {
+    function openCardActionsModal(cardId, isActive, spendingLimit, hasPin) {
         _activeCardId = cardId;
         _cardIsActive = String(isActive) === 'true';
         _currentSpendingLimit = spendingLimit;
+        _cardHasPin = String(hasPin) === 'true';
 
         const label = document.querySelector('#action-block .action-card-label');
         const icon  = document.querySelector('#action-block i');
@@ -800,12 +801,13 @@
         setTimeout(() => { if (hasPin && p0) p0.focus(); else if (p1) p1.focus(); }, 120);
     }
 
-    ['pin-new', 'pin-confirm'].forEach(id => {
+    ['pin-current', 'pin-new', 'pin-confirm'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', () => { el.value = el.value.replace(/\D/g, '').slice(0, 4); });
     });
 
     async function submitChangePin() {
+        const p0wrap = document.getElementById('pin-current-wrap');
         const p0  = document.getElementById('pin-current');
         const p1  = document.getElementById('pin-new');
         const p2  = document.getElementById('pin-confirm');
@@ -814,11 +816,13 @@
         const sp  = document.getElementById('pin-btn-spinner');
         if (!p1 || !p2 || !err) return;
 
+        const currentPinRequired = p0wrap && p0wrap.style.display !== 'none';
         const currentPin = p0 ? p0.value.trim() : '';
         const newPin     = p1.value.trim();
         const confPin    = p2.value.trim();
         err.style.display = 'none';
 
+        if (currentPinRequired && !/^\d{4}$/.test(currentPin)) { err.textContent = 'Current PIN must be exactly 4 digits.'; err.style.display = 'block'; return; }
         if (!/^\d{4}$/.test(newPin)) { err.textContent = 'New PIN must be exactly 4 digits.'; err.style.display = 'block'; return; }
         if (newPin !== confPin)        { err.textContent = 'PINs do not match.'; err.style.display = 'block'; return; }
 

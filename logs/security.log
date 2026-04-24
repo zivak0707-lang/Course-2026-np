@@ -46,3 +46,7 @@
 2026-04-24 01:05:09.096 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=zivak0707@gmail.com role=CLIENT id=7 ip=0:0:0:0:0:0:0:1
 2026-04-24 01:06:08.780 INFO  [SECURITY] SECURITY - [LOGOUT] Client user logged out: userId=7
 2026-04-24 01:06:18.508 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=tanya123@gmail.com role=CLIENT id=14 ip=0:0:0:0:0:0:0:1
+2026-04-24 11:23:52.798 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=zivak0707@gmail.com role=CLIENT id=7 ip=0:0:0:0:0:0:0:1
+2026-04-24 11:26:42.085 INFO  [SECURITY] SECURITY - [LOGOUT] Client user logged out: userId=7
+2026-04-24 12:02:04.659 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=zivak0707@gmail.com role=CLIENT id=7 ip=0:0:0:0:0:0:0:1
+2026-04-24 12:24:03.382 INFO  [SECURITY] SECURITY - [ADMIN_LOGIN_OK] Admin authenticated: email=admin@payflow.com id=9
