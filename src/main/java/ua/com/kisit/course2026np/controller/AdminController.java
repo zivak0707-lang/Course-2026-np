@@ -2,6 +2,9 @@ package ua.com.kisit.course2026np.controller;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -13,10 +16,13 @@ import ua.com.kisit.course2026np.entity.PaymentType;
 import ua.com.kisit.course2026np.entity.User;
 import ua.com.kisit.course2026np.service.AdminService;
 
+@Slf4j
 @Controller
 @RequestMapping("/admin")
 @RequiredArgsConstructor
 public class AdminController {
+
+    private static final Logger securityLog = LoggerFactory.getLogger("SECURITY");
 
     private final AdminService adminService;
 
@@ -47,6 +53,10 @@ public class AdminController {
 
     @GetMapping("/logout")
     public String logout(HttpSession session) {
+        User admin = (User) session.getAttribute("adminUser");
+        if (admin != null) {
+            securityLog.info("[LOGOUT] Admin logged out: email={} id={}", admin.getEmail(), admin.getId());
+        }
         session.invalidate();
         return "redirect:/admin/login";
     }
@@ -183,8 +193,10 @@ public class AdminController {
                                      RedirectAttributes redirectAttributes,
                                      HttpSession session) {
         if (isNotAuthenticated(session)) return "redirect:/admin/login";
+        User admin = (User) session.getAttribute("adminUser");
+        Long adminId = admin != null ? admin.getId() : null;
         try {
-            adminService.approveTransaction(paymentId);
+            adminService.approveTransaction(paymentId, adminId);
             redirectAttributes.addFlashAttribute("successMessage",
                     "Transaction #" + paymentId + " has been approved");
         } catch (IllegalArgumentException e) {
@@ -198,8 +210,10 @@ public class AdminController {
                                     RedirectAttributes redirectAttributes,
                                     HttpSession session) {
         if (isNotAuthenticated(session)) return "redirect:/admin/login";
+        User admin = (User) session.getAttribute("adminUser");
+        Long adminId = admin != null ? admin.getId() : null;
         try {
-            adminService.rejectTransaction(paymentId);
+            adminService.rejectTransaction(paymentId, adminId);
             redirectAttributes.addFlashAttribute("successMessage",
                     "Transaction #" + paymentId + " has been rejected");
         } catch (IllegalArgumentException e) {

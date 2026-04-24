@@ -1,13 +1,19 @@
 package ua.com.kisit.course2026np.service;
 
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 @Service
 public class LoginAttemptService {
+
+    private static final Logger securityLog = LoggerFactory.getLogger("SECURITY");
 
     private static final int    MAX_ATTEMPTS    = 5;
     private static final long   LOCKOUT_MINUTES = 15;
@@ -30,7 +36,8 @@ public class LoginAttemptService {
     }
 
     public void recordFailure(String email) {
-        attempts.compute(normalize(email), (k, info) -> {
+        String key = normalize(email);
+        attempts.compute(key, (k, info) -> {
             if (info == null) info = new AttemptInfo();
             if (info.lockedUntil != null && !LocalDateTime.now().isBefore(info.lockedUntil)) {
                 info.count = 0;
@@ -39,12 +46,18 @@ public class LoginAttemptService {
             info.count++;
             if (info.count >= MAX_ATTEMPTS) {
                 info.lockedUntil = LocalDateTime.now().plusMinutes(LOCKOUT_MINUTES);
+                securityLog.warn("[BRUTE_FORCE_LOCKOUT] Account locked after {} attempts: email={} lockedUntil={}",
+                        MAX_ATTEMPTS, email, info.lockedUntil);
+            } else {
+                securityLog.warn("[LOGIN_FAIL_ATTEMPT] Failed attempt #{} of {} for email={}",
+                        info.count, MAX_ATTEMPTS, email);
             }
             return info;
         });
     }
 
     public void recordSuccess(String email) {
+        log.debug("[LOGIN_ATTEMPTS_CLEARED] Cleared failed attempts for email={}", email);
         attempts.remove(normalize(email));
     }
 

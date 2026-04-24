@@ -45,16 +45,16 @@ public class CreditCardService {
      * @throws IllegalArgumentException if card number already exists
      */
     public CreditCard createCreditCard(CreditCard card) {
-        log.info("Creating credit card: {}", card.getCardNumber());
+        log.info("[CARD_CREATE] Creating card ending ****{}", maskLast4(card.getCardNumber()));
 
         if (creditCardRepository.existsByCardNumber(card.getCardNumber())) {
-            log.error("Card with number {} already exists", card.getCardNumber());
+            log.warn("[CARD_CREATE_FAIL] Card ****{} already exists", maskLast4(card.getCardNumber()));
             throw new IllegalArgumentException(
                     "Card with number " + card.getCardNumber() + " already exists");
         }
 
         CreditCard saved = creditCardRepository.save(card);
-        log.info("Credit card created with ID: {}", saved.getId());
+        log.info("[CARD_CREATE_OK] Card created: id={} ending ****{}", saved.getId(), maskLast4(saved.getCardNumber()));
         return saved;
     }
 
@@ -70,7 +70,7 @@ public class CreditCardService {
 
     @Transactional(readOnly = true)
     public Optional<CreditCard> getCreditCardByNumber(String cardNumber) {
-        log.debug("Looking up credit card by number: {}", cardNumber);
+        log.debug("Looking up credit card by number: ****{}", maskLast4(cardNumber));
         return creditCardRepository.findByCardNumber(cardNumber);
     }
 
@@ -266,5 +266,10 @@ public class CreditCardService {
         return creditCardRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Credit card with ID " + id + " not found"));
+    }
+
+    private String maskLast4(String cardNumber) {
+        if (cardNumber == null || cardNumber.length() < 4) return "????";
+        return cardNumber.substring(cardNumber.length() - 4);
     }
 }

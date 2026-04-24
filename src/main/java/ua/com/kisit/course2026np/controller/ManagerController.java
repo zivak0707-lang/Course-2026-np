@@ -2,6 +2,9 @@ package ua.com.kisit.course2026np.controller;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -13,10 +16,13 @@ import ua.com.kisit.course2026np.entity.PaymentType;
 import ua.com.kisit.course2026np.entity.User;
 import ua.com.kisit.course2026np.service.ManagerService;
 
+@Slf4j
 @Controller
 @RequestMapping("/manager")
 @RequiredArgsConstructor
 public class ManagerController {
+
+    private static final Logger securityLog = LoggerFactory.getLogger("SECURITY");
 
     private final ManagerService managerService;
 
@@ -47,6 +53,10 @@ public class ManagerController {
 
     @GetMapping("/logout")
     public String logout(HttpSession session) {
+        User manager = (User) session.getAttribute("managerUser");
+        if (manager != null) {
+            securityLog.info("[LOGOUT] Manager logged out: email={} id={}", manager.getEmail(), manager.getId());
+        }
         session.invalidate();
         return "redirect:/manager/login";
     }

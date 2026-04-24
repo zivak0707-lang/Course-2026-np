@@ -4,6 +4,8 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +21,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class CreditCardController {
 
+    private static final Logger securityLog = LoggerFactory.getLogger("SECURITY");
+
     private final CreditCardService creditCardService;
 
     // ── BLOCK / UNBLOCK ────────────────────────────────────────
@@ -31,21 +35,26 @@ public class CreditCardController {
 
         Long userId = (Long) session.getAttribute("userId");
         if (userId == null) {
+            securityLog.warn("[UNAUTHENTICATED_ACCESS] Unauthenticated toggle-block attempt for card id={}", id);
             return ResponseEntity.status(401).body(Map.of(
                     "success", false, "message", "Not authenticated"));
         }
         if (!creditCardService.isOwnedByUser(id, userId)) {
+            securityLog.warn("[ACCESS_DENIED_403] User id={} attempted to toggle-block card id={} that does not belong to them",
+                    userId, id);
             return ResponseEntity.status(403).body(Map.of(
                     "success", false, "message", "Forbidden"));
         }
         try {
             boolean isActive = creditCardService.toggleBlockCard(id);
+            log.info("[CARD_TOGGLE_BLOCK] Card id={} by user id={} → isActive={}", id, userId, isActive);
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "isActive", isActive,
                     "message", isActive ? "Card unblocked successfully" : "Card blocked successfully"
             ));
         } catch (IllegalArgumentException e) {
+            log.warn("[CARD_TOGGLE_BLOCK_FAIL] Card id={} by user id={}: {}", id, userId, e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
         }
     }
@@ -61,15 +70,17 @@ public class CreditCardController {
 
         Long userId = (Long) session.getAttribute("userId");
         if (userId == null) {
+            securityLog.warn("[UNAUTHENTICATED_ACCESS] Unauthenticated change-pin attempt for card id={}", id);
             return ResponseEntity.status(401).body(Map.of(
                     "success", false, "message", "Not authenticated"));
         }
         if (!creditCardService.isOwnedByUser(id, userId)) {
+            securityLog.warn("[ACCESS_DENIED_403] User id={} attempted to change PIN for card id={} that does not belong to them",
+                    userId, id);
             return ResponseEntity.status(403).body(Map.of(
                     "success", false, "message", "Forbidden"));
         }
         try {
-            // Перевіряємо чи картка вже має PIN
             boolean hasPin = creditCardService.getCreditCardById(id)
                     .map(c -> c.getPinCode() != null)
                     .orElse(false);
@@ -80,14 +91,17 @@ public class CreditCardController {
                             "success", false, "message", "Current PIN is required"));
                 }
                 if (!creditCardService.verifyPin(id, request.getCurrentPin())) {
+                    log.warn("[PIN_CHANGE_FAIL] Wrong current PIN for card id={} by user id={}", id, userId);
                     return ResponseEntity.badRequest().body(Map.of(
                             "success", false, "message", "Current PIN is incorrect"));
                 }
             }
 
             creditCardService.changePin(id, request);
+            log.info("[PIN_CHANGE_OK] PIN changed for card id={} by user id={}", id, userId);
             return ResponseEntity.ok(Map.of("success", true, "message", "PIN changed successfully"));
         } catch (IllegalArgumentException e) {
+            log.warn("[PIN_CHANGE_FAIL] Card id={} by user id={}: {}", id, userId, e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
         }
     }
@@ -103,17 +117,23 @@ public class CreditCardController {
 
         Long userId = (Long) session.getAttribute("userId");
         if (userId == null) {
+            securityLog.warn("[UNAUTHENTICATED_ACCESS] Unauthenticated spending-limit attempt for card id={}", id);
             return ResponseEntity.status(401).body(Map.of(
                     "success", false, "message", "Not authenticated"));
         }
         if (!creditCardService.isOwnedByUser(id, userId)) {
+            securityLog.warn("[ACCESS_DENIED_403] User id={} attempted to set spending limit for card id={} that does not belong to them",
+                    userId, id);
             return ResponseEntity.status(403).body(Map.of(
                     "success", false, "message", "Forbidden"));
         }
         try {
             creditCardService.setSpendingLimit(id, request);
+            log.info("[SPENDING_LIMIT_OK] Spending limit set for card id={} by user id={} limit={}",
+                    id, userId, request.getLimit());
             return ResponseEntity.ok(Map.of("success", true, "message", "Spending limit updated"));
         } catch (IllegalArgumentException e) {
+            log.warn("[SPENDING_LIMIT_FAIL] Card id={} by user id={}: {}", id, userId, e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
         }
     }

@@ -2,6 +2,7 @@ package ua.com.kisit.course2026np.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -13,6 +14,7 @@ import ua.com.kisit.course2026np.controller.ClientController;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -38,6 +40,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
             IllegalArgumentException ex, WebRequest request) {
+        log.warn("[BAD_REQUEST] path={} message={}", request.getDescription(false), ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 "Невірні параметри запиту",
@@ -50,6 +53,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ErrorResponse> handleIllegalStateException(
             IllegalStateException ex, WebRequest request) {
+        log.warn("[CONFLICT] path={} message={}", request.getDescription(false), ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(
                 HttpStatus.CONFLICT.value(),
                 "Операція неможлива",
@@ -62,6 +66,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> handleRuntimeException(
             RuntimeException ex, WebRequest request) {
+        log.error("[RUNTIME_ERROR] path={} error={}", request.getDescription(false), ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Внутрішня помилка сервера",
@@ -74,6 +79,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(
             Exception ex, WebRequest request) {
+        log.error("[UNEXPECTED_ERROR] path={} error={}", request.getDescription(false), ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Несподівана помилка",

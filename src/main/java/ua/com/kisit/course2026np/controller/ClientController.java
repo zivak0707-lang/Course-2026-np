@@ -3,6 +3,8 @@ package ua.com.kisit.course2026np.controller;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +25,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ClientController {
 
+    private static final Logger securityLog = LoggerFactory.getLogger("SECURITY");
+
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
     private final PaymentRepository paymentRepository;
@@ -39,15 +43,18 @@ public class ClientController {
     private User getCurrentUser(HttpSession session) {
         Long userId = (Long) session.getAttribute("userId");
         if (userId == null) {
+            securityLog.warn("[UNAUTHENTICATED_ACCESS] Access attempt without session");
             throw new UserNotAuthenticatedException();
         }
         User user = userRepository.findById(userId).orElse(null);
         if (user == null) {
             session.invalidate();
+            securityLog.warn("[UNAUTHENTICATED_ACCESS] Session userId={} not found in DB — session invalidated", userId);
             throw new UserNotAuthenticatedException();
         }
         if (!Boolean.TRUE.equals(user.getIsActive())) {
             session.invalidate();
+            securityLog.warn("[BLOCKED_USER_ACCESS] Blocked user attempted access: email={} id={}", user.getEmail(), user.getId());
             throw new UserBlockedException();
         }
         return user;
@@ -161,6 +168,7 @@ public class ClientController {
                           @RequestParam String cvv,
                           HttpSession session,
                           RedirectAttributes redirectAttributes) {
+        User currentUser = null;
         try {
             String cleanCardNumber = cardNumber.replace(" ", "").trim();
             if (!cleanCardNumber.matches("^\\d{16}$")) {
@@ -183,7 +191,7 @@ public class ClientController {
                 throw new IllegalArgumentException("Термін дії картки вже закінчився!");
             }
 
-            User currentUser = getCurrentUser(session);
+            currentUser = getCurrentUser(session);
             if (creditCardRepository.existsByCardNumber(cleanCardNumber)) {
                 throw new IllegalArgumentException("Картка з таким номером вже існує");
             }
@@ -198,12 +206,17 @@ public class ClientController {
                     .build();
 
             creditCardRepository.save(newCard);
+            log.info("[CARD_ADD_OK] User id={} added card ending in ****{}",
+                    currentUser.getId(), cleanCardNumber.substring(cleanCardNumber.length() - 4));
             redirectAttributes.addFlashAttribute("successMessage", "Картку успішно додано!");
 
         } catch (IllegalArgumentException e) {
+            Long uid = currentUser != null ? currentUser.getId() : null;
+            log.warn("[CARD_ADD_FAIL] userId={} reason={}", uid, e.getMessage());
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         } catch (Exception e) {
-            log.error("Помилка при додаванні картки для: {}", cardholderName, e);
+            Long uid = currentUser != null ? currentUser.getId() : null;
+            log.error("[CARD_ADD_ERROR] userId={} error={}", uid, e.getMessage(), e);
             redirectAttributes.addFlashAttribute("errorMessage", "Сталася технічна помилка при додаванні картки.");
         }
         return "redirect:/dashboard/cards";
@@ -216,12 +229,18 @@ public class ClientController {
             CreditCard card = creditCardRepository.findById(id)
                     .orElseThrow(() -> new IllegalArgumentException("Картку не знайдено"));
             if (!card.getUser().getId().equals(user.getId())) {
+                securityLog.warn("[ACCESS_DENIED_403] User id={} attempted to delete card id={} belonging to user id={}",
+                        user.getId(), id, card.getUser().getId());
                 throw new IllegalStateException("Доступ заборонено");
             }
+            String maskedNum = maskCard(card.getCardNumber());
             creditCardRepository.delete(card);
+            log.info("[CARD_DELETE_OK] User id={} deleted card id={} ({})", user.getId(), id, maskedNum);
             redirectAttributes.addFlashAttribute("successMessage", "Картку успішно видалено.");
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         } catch (Exception e) {
-            log.error("Error deleting card ID: {}", id, e);
+            log.error("[CARD_DELETE_ERROR] Card id={} error={}", id, e.getMessage(), e);
             redirectAttributes.addFlashAttribute("errorMessage", "Не вдалося видалити картку.");
         }
         return "redirect:/dashboard/cards";
@@ -284,9 +303,7 @@ public class ClientController {
             Payment result;
 
             switch (type) {
-                case "REPLENISHMENT" -> {
-                    result = paymentService.executeReplenishment(accountId, payment);
-                }
+                case "REPLENISHMENT" -> result = paymentService.executeReplenishment(accountId, payment);
                 case "TRANSFER" -> {
                     if (recipientAccount == null || recipientAccount.isBlank()) {
                         throw new IllegalArgumentException("Вкажіть рахунок отримувача для переказу");
@@ -303,17 +320,22 @@ public class ClientController {
             }
 
             if (result.isCompleted()) {
+                log.info("[PAYMENT_SUBMIT_OK] User id={} completed {} amount={} accountId={} txId={}",
+                        user.getId(), type, amount, accountId, result.getTransactionId());
                 redirectAttributes.addFlashAttribute("successMessage",
                         "Успішно! ID транзакції: " + result.getTransactionId());
             } else {
+                log.warn("[PAYMENT_SUBMIT_FAIL] User id={} {} amount={} accountId={} reason={}",
+                        user.getId(), type, amount, accountId, result.getErrorMessage());
                 redirectAttributes.addFlashAttribute("errorMessage",
                         "Операція не вдалась: " + result.getErrorMessage());
             }
 
         } catch (IllegalArgumentException | IllegalStateException e) {
+            log.warn("[PAYMENT_SUBMIT_REJECTED] accountId={} type={} amount={} reason={}", accountId, type, amount, e.getMessage());
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         } catch (Exception e) {
-            log.error("Помилка при виконанні платежу", e);
+            log.error("[PAYMENT_SUBMIT_ERROR] accountId={} type={} amount={} error={}", accountId, type, amount, e.getMessage(), e);
             redirectAttributes.addFlashAttribute("errorMessage", "Технічна помилка. Спробуйте пізніше.");
         }
 
@@ -356,9 +378,10 @@ public class ClientController {
             user.setLastName(lastName.trim());
             user.setEmail(email.trim());
             userRepository.save(user);
+            log.info("[PROFILE_UPDATE_OK] User id={} updated profile: email={}", user.getId(), email.trim());
             redirectAttributes.addFlashAttribute("successMessage", "Профіль успішно оновлено!");
         } catch (Exception e) {
-            log.error("Помилка при оновленні профілю", e);
+            log.error("[PROFILE_UPDATE_ERROR] error={}", e.getMessage(), e);
             redirectAttributes.addFlashAttribute("errorMessage", "Помилка при оновленні профілю.");
         }
         return "redirect:/dashboard/settings";
@@ -371,11 +394,13 @@ public class ClientController {
                                  RedirectAttributes redirectAttributes) {
         User user = getCurrentUser(session);
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            log.warn("[PASSWORD_CHANGE_FAIL] User id={} provided wrong current password", user.getId());
             redirectAttributes.addFlashAttribute("errorMessage", "Невірний поточний пароль!");
             return "redirect:/dashboard/settings";
         }
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+        log.info("[PASSWORD_CHANGE_OK] User id={} changed password", user.getId());
         redirectAttributes.addFlashAttribute("successMessage", "Пароль успішно змінено!");
         return "redirect:/dashboard/settings";
     }
@@ -385,6 +410,8 @@ public class ClientController {
     // ─────────────────────────────────────────────────────────────────
     @GetMapping("/logout")
     public String logout(HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        securityLog.info("[LOGOUT] Client user logged out: userId={}", userId);
         session.invalidate();
         return "redirect:/";
     }
@@ -400,5 +427,10 @@ public class ClientController {
 
     private String formatCurrency(BigDecimal amount) {
         return String.format("$%,.2f", amount);
+    }
+
+    private String maskCard(String cardNumber) {
+        if (cardNumber == null || cardNumber.length() < 4) return "****";
+        return "****" + cardNumber.substring(cardNumber.length() - 4);
     }
 }
