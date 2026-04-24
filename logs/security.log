@@ -50,3 +50,15 @@
 2026-04-24 11:26:42.085 INFO  [SECURITY] SECURITY - [LOGOUT] Client user logged out: userId=7
 2026-04-24 12:02:04.659 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=zivak0707@gmail.com role=CLIENT id=7 ip=0:0:0:0:0:0:0:1
 2026-04-24 12:24:03.382 INFO  [SECURITY] SECURITY - [ADMIN_LOGIN_OK] Admin authenticated: email=admin@payflow.com id=9
+12026-04-24 15:39:57.959 INFO  [SECURITY] SECURITY - [ADMIN_LOGIN_OK] Admin authenticated: email=admin@payflow.com id=9
+2026-04-24 15:44:39.224 INFO  [SECURITY] SECURITY - [REFUND_OK] originalPaymentId=83 refundId=84 amount=46.72 refundedBy=Admin: admin@payflow.com (id=9)
+2026-04-24 15:44:39.230 INFO  [SECURITY] SECURITY - [ADMIN_ACTION] Admin id=9 issued refund for paymentId=83 reason=test
+2026-04-24 15:45:14.444 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=tanya123@gmail.com role=CLIENT id=14 ip=0:0:0:0:0:0:0:1
+2026-04-24 15:51:13.550 INFO  [SECURITY] SECURITY - [LOGOUT] Client user logged out: userId=14
+2026-04-24 15:51:19.043 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=zivak0707@gmail.com role=CLIENT id=7 ip=0:0:0:0:0:0:0:1
+2026-04-24 15:58:26.812 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=zivak0707@gmail.com role=CLIENT id=7 ip=0:0:0:0:0:0:0:1
+2026-04-24 16:00:36.047 INFO  [SECURITY] SECURITY - [ADMIN_LOGIN_OK] Admin authenticated: email=admin@payflow.com id=9
+2026-04-24 16:02:47.858 INFO  [SECURITY] SECURITY - [MANAGER_LOGIN_OK] Manager authenticated: email=manager@payflow.com id=11
+2026-04-24 19:43:20.344 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=zivak0707@gmail.com role=CLIENT id=7 ip=0:0:0:0:0:0:0:1
+2026-04-24 19:44:16.850 INFO  [SECURITY] SECURITY - [ADMIN_LOGIN_OK] Admin authenticated: email=admin@payflow.com id=9
+2026-04-24 19:50:36.669 INFO  [SECURITY] SECURITY - [LOGIN_OK] Successful login: email=zivak0707@gmail.com role=CLIENT id=7 ip=0:0:0:0:0:0:0:1
