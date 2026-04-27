@@ -214,9 +214,13 @@ mvn test
 
 | 👤 Клієнт | 🛡️ Адмін |
 |-----------|----------|
-| ![dashboard](docs/screenshots/dashboard.png) | ![admin](docs/screenshots/admin.png) |
+| <img width="1919" height="994" alt="image" src="https://github.com/user-attachments/assets/d0ccf383-7856-4cbd-89df-6732016ce3a1" />
+ | <img width="1919" height="994" alt="image" src="https://github.com/user-attachments/assets/fd14d30e-597c-4c67-b650-c75af8a4c2a8" />
+ |<img width="1919" height="993" alt="image" src="https://github.com/user-attachments/assets/f02c9d84-87cd-454b-905c-f5953deefa3b" />
+<img width="1919" height="994" alt="image" src="https://github.com/user-attachments/assets/42b520e4-dd14-4530-bb56-ad72aab9eb60" />
+<img width="1919" height="992" alt="image" src="https://github.com/user-attachments/assets/be290c4c-b36d-49d5-b027-7e92c777685a" />
 
-> 📁 Скріншоти у папці `docs/screenshots/`
+
 
 ---
 
