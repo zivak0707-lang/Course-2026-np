@@ -45,3 +45,9 @@ Thumbs.db
 # Sensitive config
 application-prod.properties
 application-secret.properties
+
+# Non-project files
+*.py
+*.docx
+*.pdf
+*.xlsx
