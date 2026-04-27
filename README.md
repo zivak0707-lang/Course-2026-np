@@ -212,15 +212,40 @@ mvn test
 
 ## 📸 Скріншоти
 
-| 👤 Клієнт | 🛡️ Адмін |
-|-----------|----------|
-| <img width="1919" height="994" alt="image" src="https://github.com/user-attachments/assets/d0ccf383-7856-4cbd-89df-6732016ce3a1" />
- | <img width="1919" height="994" alt="image" src="https://github.com/user-attachments/assets/fd14d30e-597c-4c67-b650-c75af8a4c2a8" />
- |<img width="1919" height="993" alt="image" src="https://github.com/user-attachments/assets/f02c9d84-87cd-454b-905c-f5953deefa3b" />
-<img width="1919" height="994" alt="image" src="https://github.com/user-attachments/assets/42b520e4-dd14-4530-bb56-ad72aab9eb60" />
-<img width="1919" height="992" alt="image" src="https://github.com/user-attachments/assets/be290c4c-b36d-49d5-b027-7e92c777685a" />
+Нижче представлено основні екрани застосунку — від клієнтського інтерфейсу
+до адмін-панелі та системи логування.
 
+### 🏠 Клієнтська частина
 
+Стартова сторінка з формою входу та особистий dashboard клієнта зі статистикою рахунків і останніми транзакціями.
+
+| <img width="1919" alt="Landing page" src="https://github.com/user-attachments/assets/d0ccf383-7856-4cbd-89df-6732016ce3a1" /> | <img width="1919" alt="Client dashboard" src="https://github.com/user-attachments/assets/fd14d30e-597c-4c67-b650-c75af8a4c2a8" /> |
+|:---:|:---:|
+| **🌐 Головна сторінка / Вхід** | **📊 Dashboard клієнта** |
+
+### 💳 Картки та платежі
+
+Управління банківськими картками (PIN, ліміти, блокування) та форма здійснення платежу або переказу між рахунками.
+
+| <img width="1919" alt="Cards" src="https://github.com/user-attachments/assets/f02c9d84-87cd-454b-905c-f5953deefa3b" /> | <img width="1919" alt="Payment" src="https://github.com/user-attachments/assets/42b520e4-dd14-4530-bb56-ad72aab9eb60" /> |
+|:---:|:---:|
+| **💳 Управління картками** | **💸 Форма платежу** |
+
+### 🛡️ Адмін-панель
+
+Системна панель адміністратора зі статистикою та сторінка управління транзакціями (підтвердження, скасування, refund).
+
+| <img width="1919" alt="Admin dashboard" src="https://github.com/user-attachments/assets/be290c4c-b36d-49d5-b027-7e92c777685a" /> | _скріншот буде додано_ |
+|:---:|:---:|
+| **📊 Dashboard адміністратора** | **📋 Управління транзакціями** |
+
+### 👔 Менеджер та логи
+
+Панель менеджера з оперативною статистикою та фрагмент `security.log` з аудитом подій безпеки.
+
+| _скріншот буде додано_ | _скріншот буде додано_ |
+|:---:|:---:|
+| **👔 Панель менеджера** | **📝 Security log (аудит)** |
 
 ---
 
