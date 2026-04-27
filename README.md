@@ -1,141 +1,225 @@
-# PayFlow — Banking Payment System
+# 💳 PayFlow — Банківська Платіжна Система
 
-## About
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.0.2-6DB33F?style=for-the-badge&logo=spring-boot)
+![Java](https://img.shields.io/badge/Java-17-ED8B00?style=for-the-badge&logo=openjdk)
+![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=for-the-badge&logo=mysql)
+![Maven](https://img.shields.io/badge/Maven-3.8+-C71A36?style=for-the-badge&logo=apache-maven)
+![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
 
-PayFlow is a web-based banking payment system that simulates core operations of a real bank: account management, credit cards, payments, transfers, and role-based administration. It is an **educational project** built for the 2026 coursework, demonstrating a full-stack Spring Boot application with three distinct user roles (Client, Manager, Admin) and a server-rendered FreeMarker UI.
+> Навчальний веб-застосунок що імітує банківську платіжну систему з повним
+> циклом управління фінансами. Розроблено в рамках навчальної практики.
 
-## Tech Stack
+---
 
-- **Java** 17
-- **Spring Boot** 4.0.2 (Web, Data JPA, Security, Validation, DevTools)
-- **Spring Security** (BCrypt password hashing, role-based access)
-- **Hibernate / Jakarta Persistence API** 3.2.0
-- **MySQL** 8.x (via `mysql-connector-j`)
-- **FreeMarker** (`spring-boot-starter-freemarker` + `freemarker-java8` 2.1.0) for server-side templates
-- **Lombok** 1.18.42
-- **Maven** (build, with `spring-boot-maven-plugin`)
-- **JUnit 5** + Spring Boot Test (testing)
-- **SLF4J / Logback** (rolling file appenders configured in `logback-spring.xml`)
+## ✨ Можливості
 
-## Features
+| 👤 Клієнт | 👔 Менеджер | 🛡️ Адміністратор |
+|-----------|-------------|-------------------|
+| 📝 Реєстрація та вхід у систему | 🔐 Окремий портал входу `/manager/login` | 🔐 Окремий портал входу `/admin/login` |
+| 📊 Особистий dashboard зі статистикою | 📈 Панель з операційною статистикою | 📊 Системна панель зі статистикою |
+| 🏦 Відкриття банківських рахунків | 📋 Перегляд усіх транзакцій системи | 👥 Управління користувачами (CRUD, ролі) |
+| 💳 Додавання та видалення карток | 📑 Формування звітів | 🚫 Блокування / розблокування користувачів |
+| 🔒 Зміна PIN-коду картки | | ✅ Підтвердження транзакцій |
+| 💰 Встановлення лімітів витрат | | ❌ Відхилення / скасування платежів |
+| 🛡️ Блокування / розблокування карток | | 💸 Повернення коштів (refund) |
+| 💸 Здійснення платежів | | 📑 Системні звіти |
+| 🔄 Перекази між рахунками | | ⚙️ Системні налаштування |
+| ➕ Поповнення рахунків | | 👤 Зміна власного профілю та паролю |
+| 📜 Історія транзакцій з пагінацією | | |
+| ❎ Скасування платежів у статусі pending | | |
+| ⚙️ Зміна профілю та паролю | | |
 
-### CLIENT (`/dashboard/**`)
-- Register and log in
-- Personal dashboard with account/card/transaction overview
-- Open new bank accounts and view account details
-- Add/delete credit cards, change PIN, set spending limits, block/unblock cards
-- Make payments, replenish accounts, and execute account-to-account transfers
-- View transaction history with paging and cancel pending payments
-- Manage profile and change password
+---
 
-### MANAGER (`/manager/**`)
-- Separate manager login portal
-- Manager dashboard with operational stats
-- View all transactions across the system
-- View reports
+## 🛠️ Технічний стек
 
-### ADMIN (`/admin/**`)
-- Separate admin login portal
-- Admin dashboard with system-wide statistics
-- User management: list users, assign roles, block/unblock, delete
-- Transaction management: approve, reject, cancel, refund
-- Reports and system settings
-- Update own admin profile and password
+- **🖥️ Backend:** Spring Boot 4.0.2, Java 17, Spring Security, Spring Data JPA / Hibernate, Jakarta Persistence 3.2.0
+- **🎨 Frontend:** FreeMarker (`spring-boot-starter-freemarker` + `freemarker-java8` 2.1.0), Bootstrap 5, Chart.js
+- **🗄️ Database:** MySQL 8.x (`mysql-connector-j`)
+- **🔐 Security:** BCrypt password hashing, Session-based auth, Brute-force protection (`LoginAttemptService`)
+- **📝 Logging:** SLF4J + Logback (`payflow.log` + `security.log`, з ротацією та gzip-стисненням)
+- **🧪 Testing:** JUnit 5 + Mockito + Spring Boot Test (**97 тестів**)
+- **🛠️ Build:** Maven, Lombok 1.18.42, Spring Boot DevTools
 
-### Cross-cutting
-- BCrypt password storage; automatic re-hash of any plain-text legacy passwords on startup
-- Login attempt throttling (`LoginAttemptService`)
-- Global exception handling (`GlobalExceptionHandler`)
-- Audit logging to `logs/payflow.log` and `logs/security.log` (rotated, gzipped)
+---
 
-## Prerequisites
+## 🚀 Швидкий старт
 
-- Java 17+
-- Maven 3.8+
-- MySQL 8.x
+### 📋 Вимоги
 
-## Setup & Run
+- ☕ **Java 17+**
+- 📦 **Maven 3.8+**
+- 🐬 **MySQL 8.x**
 
-### 1. Clone the repository
+### ⚙️ Встановлення
+
+#### 1️⃣ Клонувати репозиторій
 ```bash
 git clone https://github.com/zivak0707-lang/Course-2026-np.git
 cd Course-2026-np
 ```
 
-### 2. Create MySQL database
+#### 2️⃣ Створити базу даних MySQL
 ```sql
-CREATE DATABASE `course-2026-np` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE `course-2026-np`
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
 ```
 
-### 3. Configure `application.properties`
-Edit `src/main/resources/application.properties` and set your MySQL root password — replace the `YOUR_MYSQL_PASSWORD` placeholder with your actual password:
+#### 3️⃣ Налаштувати `application.properties`
+Відкрийте `src/main/resources/application.properties` і встановіть пароль root-користувача MySQL — замініть placeholder `YOUR_MYSQL_PASSWORD` на ваш реальний пароль:
 ```properties
 spring.datasource.username=root
 spring.datasource.password=YOUR_MYSQL_PASSWORD
 spring.datasource.url=jdbc:mysql://localhost:3306/course-2026-np
 ```
-A clean template is also available at `src/main/resources/application.properties.example` for new developers.
+> 💡 Чистий шаблон конфігурації знаходиться у файлі `src/main/resources/application.properties.example`.
 
-The schema is generated automatically (`spring.jpa.hibernate.ddl-auto=update`).
+Схема БД генерується автоматично через `spring.jpa.hibernate.ddl-auto=update`.
 
-### 4. Run
+#### 4️⃣ Запустити застосунок
 ```bash
 mvn spring-boot:run
 ```
-On Windows you can also use the wrapper: `mvnw.cmd spring-boot:run`.
-
-### 5. Open in browser
-http://localhost:8080
-
-## Default Test Accounts
-
-| Role    | Email                | Password    |
-|---------|----------------------|-------------|
-| Admin   | admin@payflow.com    | admin123    |
-| Manager | manager@payflow.com  | manager123  |
-| Client  | client@payflow.com   | client123   |
-
-These users are created automatically by `DataInitializer` on first run. Passwords are stored as BCrypt hashes.
-
-## Project Structure
-
-```
-src/main/java/ua/com/kisit/course2026np/
-├── Main.java                  # Spring Boot entry point
-├── config/                    # DataInitializer, WebConfig
-├── controller/                # HomeController, ClientController, ManagerController,
-│                              # AdminController, AccountController, CreditCardController,
-│                              # PaymentController, DashboardAccountController, TestController
-├── dto/                       # ChangePinRequest, DashboardStats, SpendingLimitRequest,
-│                              # TransactionPage
-├── entity/                    # User, Account, CreditCard, Payment + enums
-│                              # (UserRole, AccountStatus, PaymentStatus, PaymentType)
-├── exception/                 # GlobalExceptionHandler
-├── repository/                # Spring Data JPA repositories
-├── security/                  # SecurityConfig (Spring Security setup)
-├── service/                   # AccountService, AdminService, CreditCardService,
-│                              # DashboardService, LoginAttemptService, ManagerService,
-│                              # PaymentService, UserService
-└── validation/                # Custom validators
-
-src/main/resources/
-├── application.properties     # DB and FreeMarker config
-├── logback-spring.xml         # Rolling file appenders for payflow & security logs
-├── static/                    # css, js, favicon
-└── templates/                 # FreeMarker (.ftl) views — admin, manager, client
+Або за допомогою Maven Wrapper:
+```bash
+./mvnw spring-boot:run        # Linux / macOS
+mvnw.cmd spring-boot:run      # Windows
 ```
 
-## Running Tests
+#### 5️⃣ Відкрити у браузері
+🌐 **http://localhost:8080**
 
+---
+
+## 🔑 Тестові акаунти
+
+| 🎭 Роль | 📧 Email | 🔒 Пароль | 📝 Опис |
+|---------|----------|-----------|---------|
+| 🛡️ **Admin** | `admin@payflow.com` | `admin123` | Повний доступ до системи, керування користувачами та транзакціями |
+| 👔 **Manager** | `manager@payflow.com` | `manager123` | Перегляд усіх транзакцій та формування звітів |
+| 👤 **Client** | `client@payflow.com` | `client123` | Звичайний клієнт — рахунки, картки, платежі |
+
+> ✅ **Створюються автоматично при першому запуску** через `DataInitializer`.
+> Паролі зберігаються у вигляді BCrypt-хешів.
+
+---
+
+## 📁 Структура проєкту
+
+```
+📦 course-2026-np
+├── 📄 pom.xml                          # Maven конфігурація + залежності
+├── 📄 README.md                        # Документація проєкту
+├── 📄 mvnw / mvnw.cmd                  # Maven Wrapper (Linux/Windows)
+│
+└── 📂 src
+    ├── 📂 main
+    │   ├── 📂 java/ua/com/kisit/course2026np
+    │   │   ├── ☕ Main.java              # Точка входу Spring Boot
+    │   │   │
+    │   │   ├── 📂 config                 # ⚙️ Конфігурація
+    │   │   │   ├── DataInitializer.java     # Сід-юзери при старті
+    │   │   │   └── WebConfig.java           # Web MVC налаштування
+    │   │   │
+    │   │   ├── 📂 controller             # 🎮 Контролери (REST + MVC)
+    │   │   │   ├── HomeController           # / , /login , /register
+    │   │   │   ├── ClientController         # /dashboard/**
+    │   │   │   ├── ManagerController        # /manager/**
+    │   │   │   ├── AdminController          # /admin/**
+    │   │   │   ├── AccountController        # /api/accounts/**
+    │   │   │   ├── CreditCardController     # /cards/**
+    │   │   │   ├── PaymentController        # /api/payments/**
+    │   │   │   ├── DashboardAccountController
+    │   │   │   └── TestController           # /api/test/**
+    │   │   │
+    │   │   ├── 📂 dto                    # 📦 Data Transfer Objects
+    │   │   │   ├── ChangePinRequest
+    │   │   │   ├── DashboardStats
+    │   │   │   ├── SpendingLimitRequest
+    │   │   │   └── TransactionPage
+    │   │   │
+    │   │   ├── 📂 entity                 # 🗃️ JPA-сутності
+    │   │   │   ├── User / UserRole
+    │   │   │   ├── Account / AccountStatus
+    │   │   │   ├── CreditCard
+    │   │   │   └── Payment / PaymentStatus / PaymentType
+    │   │   │
+    │   │   ├── 📂 exception              # ⚠️ Глобальна обробка помилок
+    │   │   │   └── GlobalExceptionHandler
+    │   │   │
+    │   │   ├── 📂 repository             # 💾 Spring Data JPA репозиторії
+    │   │   │   ├── UserRepository
+    │   │   │   ├── AccountRepository
+    │   │   │   ├── CreditCardRepository
+    │   │   │   └── PaymentRepository
+    │   │   │
+    │   │   ├── 📂 security               # 🔐 Spring Security
+    │   │   │   └── SecurityConfig
+    │   │   │
+    │   │   ├── 📂 service                # 💼 Бізнес-логіка
+    │   │   │   ├── UserService
+    │   │   │   ├── AccountService
+    │   │   │   ├── CreditCardService
+    │   │   │   ├── PaymentService
+    │   │   │   ├── DashboardService
+    │   │   │   ├── LoginAttemptService      # Захист від брутфорсу
+    │   │   │   ├── ManagerService
+    │   │   │   └── AdminService
+    │   │   │
+    │   │   └── 📂 validation             # ✅ Кастомні валідатори
+    │   │
+    │   └── 📂 resources
+    │       ├── 📄 application.properties           # Конфігурація
+    │       ├── 📄 application.properties.example   # Шаблон для розробників
+    │       ├── 📄 logback-spring.xml               # Налаштування логів
+    │       ├── 📂 static                # CSS / JS / favicon
+    │       └── 📂 templates             # 🎨 FreeMarker шаблони (.ftl)
+    │           ├── 📂 admin                # admin/dashboard, users, transactions...
+    │           ├── 📂 manager              # manager/dashboard, reports...
+    │           └── 📂 client               # client/dashboard, cards, payment...
+    │
+    └── 📂 test/java/.../course2026np    # 🧪 Тести
+        ├── Course2026NpApplicationTests       # Smoke-тест Spring контексту
+        ├── 📂 entity                         # AccountTest, CreditCardTest,
+        │                                     # PaymentTest, UserTest
+        └── 📂 service                        # PaymentServiceTest,
+                                              # TransferDebugTest
+```
+
+---
+
+## 🧪 Тестування
+
+Запуск усіх тестів:
 ```bash
 mvn test
 ```
 
-The project ships with **7 test classes** (~97 test methods) covering:
-- Entity tests: `UserTest`, `AccountTest`, `CreditCardTest`, `PaymentTest`
-- Service tests: `PaymentServiceTest`, `TransferDebugTest`
-- Spring context smoke test: `Course2026NpApplicationTests`
+📊 У проєкті **97 тестів** у **7 тестових класах**:
 
-## License
+| 📂 Тестовий клас | 🔢 Кількість | 📌 Що перевіряє |
+|------------------|-------------|-----------------|
+| `UserTest` | 13 | Валідація сутності користувача |
+| `AccountTest` | 23 | Логіка рахунків та балансів |
+| `CreditCardTest` | 19 | Картки, PIN, ліміти, термін дії |
+| `PaymentTest` | 21 | Поведінка платежу |
+| `PaymentServiceTest` | 15 | Сервіс платежів та переказів |
+| `TransferDebugTest` | 5 | Сценарії переказів |
+| `Course2026NpApplicationTests` | 1 | Smoke-тест контексту Spring |
 
-Educational project — Зівак Сергій, 2026
+---
+
+## 📸 Скріншоти
+
+| 👤 Клієнт | 🛡️ Адмін |
+|-----------|----------|
+| ![dashboard](docs/screenshots/dashboard.png) | ![admin](docs/screenshots/admin.png) |
+
+> 📁 Скріншоти у папці `docs/screenshots/`
+
+---
+
+## 📄 Ліцензія
+
+Навчальний проєкт — **Зівак Сергій**, група **371**, 2026
