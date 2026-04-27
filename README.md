@@ -68,12 +68,14 @@ CREATE DATABASE `course-2026-np` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_c
 ```
 
 ### 3. Configure `application.properties`
-Open `src/main/resources/application.properties` and set your MySQL password:
+Edit `src/main/resources/application.properties` and set your MySQL root password — replace the `YOUR_MYSQL_PASSWORD` placeholder with your actual password:
 ```properties
 spring.datasource.username=root
 spring.datasource.password=YOUR_MYSQL_PASSWORD
 spring.datasource.url=jdbc:mysql://localhost:3306/course-2026-np
 ```
+A clean template is also available at `src/main/resources/application.properties.example` for new developers.
+
 The schema is generated automatically (`spring.jpa.hibernate.ddl-auto=update`).
 
 ### 4. Run
