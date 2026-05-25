@@ -111,10 +111,4 @@ public class User {
         card.setUser(null);
     }
 
-    public Comparable<Object> getRegisteredAt() {
-        return null;
-    }
-
-    public void setRegisteredAt(LocalDateTime now) {
-    }
 }

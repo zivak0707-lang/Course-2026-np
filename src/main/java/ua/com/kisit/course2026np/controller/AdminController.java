@@ -259,6 +259,26 @@ public class AdminController {
     }
 
     // ─────────────────────────────────────────────
+    //  ACCOUNTS
+    // ─────────────────────────────────────────────
+
+    @PostMapping("/accounts/{id}/unblock")
+    public String unblockAccount(@PathVariable Long id,
+                                 RedirectAttributes redirectAttributes,
+                                 HttpSession session) {
+        if (isNotAuthenticated(session)) return "redirect:/admin/login";
+        User admin = (User) session.getAttribute("adminUser");
+        Long adminId = admin != null ? admin.getId() : null;
+        try {
+            String msg = adminService.unblockAccount(id, adminId);
+            redirectAttributes.addFlashAttribute("successMessage", msg);
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/dashboard";
+    }
+
+    // ─────────────────────────────────────────────
     //  PLACEHOLDER PAGES
     // ─────────────────────────────────────────────
 

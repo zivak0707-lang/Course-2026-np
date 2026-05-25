@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ua.com.kisit.course2026np.dto.DashboardStats;
 import ua.com.kisit.course2026np.dto.TransactionPage;
 import ua.com.kisit.course2026np.entity.*;
+import ua.com.kisit.course2026np.repository.AccountRepository;
 import ua.com.kisit.course2026np.repository.PaymentRepository;
 import ua.com.kisit.course2026np.repository.UserRepository;
 import ua.com.kisit.course2026np.service.PaymentService;
@@ -28,6 +29,7 @@ public class AdminService {
 
     private final UserRepository userRepository;
     private final PaymentRepository paymentRepository;
+    private final AccountRepository accountRepository;
     private final DashboardService dashboardService;
     private final PasswordEncoder passwordEncoder;
     private final PaymentService paymentService;
@@ -49,6 +51,12 @@ public class AdminService {
             securityLog.warn("[ADMIN_LOGIN_FAIL] Admin login failed: email={} id={} reason=wrong_password",
                     normalizedEmail, admin.getId());
             throw new IllegalArgumentException("Incorrect password");
+        }
+
+        if (!Boolean.TRUE.equals(admin.getIsActive())) {
+            securityLog.warn("[ADMIN_LOGIN_FAIL] Admin login failed: email={} id={} reason=account_blocked",
+                    normalizedEmail, admin.getId());
+            throw new IllegalArgumentException("Your account has been blocked");
         }
 
         securityLog.info("[ADMIN_LOGIN_OK] Admin authenticated: email={} id={}", admin.getEmail(), admin.getId());
@@ -131,6 +139,24 @@ public class AdminService {
                 adminId, user.getId(), user.getEmail(), user.getRole());
         userRepository.deleteById(userId);
         return "User " + user.getEmail() + " deleted";
+    }
+
+    // ── Accounts ──────────────────────────────────────────────────────────────
+
+    @Transactional
+    public String unblockAccount(Long accountId, Long adminId) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+        if (account.getStatus() == AccountStatus.ACTIVE) {
+            throw new IllegalArgumentException("Account is already active");
+        }
+        account.unblock();
+        accountRepository.save(account);
+        log.info("[ADMIN_ACTION] Admin id={} unblocked account: id={} number={}",
+                adminId, account.getId(), account.getAccountNumber());
+        securityLog.info("[ACCOUNT_UNBLOCK] Admin id={} unblocked account: id={} number={}",
+                adminId, account.getId(), account.getAccountNumber());
+        return "Account " + account.getAccountNumber() + " has been unblocked";
     }
 
     // ── Transactions ──────────────────────────────────────────────────────────

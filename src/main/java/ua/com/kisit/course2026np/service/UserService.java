@@ -122,14 +122,4 @@ public class UserService {
         return userRepository.countByIsActiveTrue();
     }
 
-    /* ===================== CURRENT USER ===================== */
-
-    public User getCurrentUser() {
-        // Тимчасова заглушка: повертаємо користувача з ID 1 або створюємо, якщо база порожня
-        return userRepository.findById(1L)
-                .orElseGet(() -> {
-                    // Це щоб код не падав, якщо база пуста
-                    return null;
-                });
-    }
 }

@@ -165,167 +165,45 @@ public class PaymentController {
         return "redirect:/dashboard/transactions";
     }
 
-    // ============= REST API ENDPOINTS =============
+    // ============= CSV EXPORT (user-scoped) =============
 
-    /**
-     * CREATE - Create new payment (without execution)
-     * POST http://localhost:8080/api/payments
-     */
-    @PostMapping("/api/payments")
-    @ResponseBody
-    public ResponseEntity<Payment> createPayment(@RequestBody Payment payment) {
-        Payment created = paymentService.createPayment(payment);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
-    }
-
-    /**
-     * CREATE - Execute payment (deduct funds)
-     * POST http://localhost:8080/api/payments/execute
-     */
-    @PostMapping("/api/payments/execute")
-    @ResponseBody
-    public ResponseEntity<Payment> executePayment(@RequestBody ExecutePaymentRequest request) {
-        Payment executed = paymentService.executePayment(
-                request.getAccountId(),
-                request.getPayment()
-        );
-        return ResponseEntity.status(HttpStatus.CREATED).body(executed);
-    }
-
-    /**
-     * CREATE - Execute replenishment
-     * POST http://localhost:8080/api/payments/replenish
-     */
-    @PostMapping("/api/payments/replenish")
-    @ResponseBody
-    public ResponseEntity<Payment> executeReplenishment(@RequestBody ExecutePaymentRequest request) {
-        Payment executed = paymentService.executeReplenishment(
-                request.getAccountId(),
-                request.getPayment()
-        );
-        return ResponseEntity.status(HttpStatus.CREATED).body(executed);
-    }
-
-    /**
-     * CREATE - Execute a transfer between two accounts (deducts sender, credits recipient)
-     * POST http://localhost:8080/api/payments/transfer
-     *
-     * Request body example:
-     * {
-     *   "accountId": 1,
-     *   "recipientAccountNumber": "UA123456789012345678",
-     *   "payment": { "amount": 100.00, "description": "Rent" }
-     * }
-     */
-    @PostMapping("/api/payments/transfer")
-    @ResponseBody
-    public ResponseEntity<Payment> executeTransfer(@RequestBody TransferRequest request) {
-        try {
-            Payment executed = paymentService.executeTransfer(
-                    request.getAccountId(),
-                    request.getRecipientAccountNumber(),
-                    request.getPayment()
-            );
-            return ResponseEntity.status(HttpStatus.CREATED).body(executed);
-        } catch (IllegalArgumentException e) {
-            log.error("Transfer failed: {}", e.getMessage());
-            return ResponseEntity.badRequest().build();
+    @GetMapping(value = "/api/payments/export/csv", produces = "text/csv;charset=UTF-8")
+    public ResponseEntity<String> exportTransactionsCsv(HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null || !Boolean.TRUE.equals(user.getIsActive())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        List<Payment> all = paymentService.getPaymentsForUser(user, null, null, null, 0, Integer.MAX_VALUE).getContent();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Transaction ID,Date,Type,Status,Amount,Sender,Recipient,Description\n");
+        for (Payment p : all) {
+            sb.append(csv(p.getTransactionId())).append(',')
+              .append(csv(p.getCreatedAt() != null ? p.getCreatedAt().toString() : "")).append(',')
+              .append(csv(p.getType() != null ? p.getType().name() : "")).append(',')
+              .append(csv(p.getStatus() != null ? p.getStatus().name() : "")).append(',')
+              .append(csv(p.getAmount() != null ? p.getAmount().toPlainString() : "")).append(',')
+              .append(csv(p.getSenderAccount())).append(',')
+              .append(csv(p.getRecipientAccount())).append(',')
+              .append(csv(p.getDescription())).append('\n');
+        }
+
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"transactions.csv\"")
+                .body(sb.toString());
     }
 
-    /**
-     * READ - Get all payments
-     * GET http://localhost:8080/api/payments
-     */
-    @GetMapping("/api/payments")
-    @ResponseBody
-    public ResponseEntity<List<Payment>> getAllPayments() {
-        List<Payment> payments = paymentService.getAllPayments();
-        return ResponseEntity.ok(payments);
+    private static String csv(String s) {
+        if (s == null) return "";
+        boolean needsQuote = s.contains(",") || s.contains("\"") || s.contains("\n") || s.contains("\r");
+        String escaped = s.replace("\"", "\"\"");
+        return needsQuote ? "\"" + escaped + "\"" : escaped;
     }
-
-    /**
-     * READ - Get payment by ID
-     * GET http://localhost:8080/api/payments/1
-     */
-    @GetMapping("/api/payments/{id}")
-    @ResponseBody
-    public ResponseEntity<Payment> getPaymentById(@PathVariable Long id) {
-        return paymentService.getPaymentById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    /**
-     * READ - Get payments by account
-     * GET http://localhost:8080/api/payments/account/1
-     */
-    @GetMapping("/api/payments/account/{accountId}")
-    @ResponseBody
-    public ResponseEntity<List<Payment>> getPaymentsByAccount(@PathVariable Long accountId) {
-        Account account = accountService.getAccountById(accountId)
-                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
-        List<Payment> payments = paymentService.getPaymentsByAccount(account);
-        return ResponseEntity.ok(payments);
-    }
-
-    /**
-     * READ - Get payments by account (ordered)
-     * GET http://localhost:8080/api/payments/account/1/ordered
-     */
-    @GetMapping("/api/payments/account/{accountId}/ordered")
-    @ResponseBody
-    public ResponseEntity<List<Payment>> getPaymentsByAccountOrdered(@PathVariable Long accountId) {
-        Account account = accountService.getAccountById(accountId)
-                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
-        List<Payment> payments = paymentService.getPaymentsByAccountOrdered(account);
-        return ResponseEntity.ok(payments);
-    }
-
-    /**
-     * READ - Get payments by status
-     * GET http://localhost:8080/api/payments/status/COMPLETED
-     */
-    @GetMapping("/api/payments/status/{status}")
-    @ResponseBody
-    public ResponseEntity<List<Payment>> getPaymentsByStatus(@PathVariable PaymentStatus status) {
-        List<Payment> payments = paymentService.getPaymentsByStatus(status);
-        return ResponseEntity.ok(payments);
-    }
-
-    /**
-     * DELETE - Delete payment
-     * DELETE http://localhost:8080/api/payments/1
-     */
-    @DeleteMapping("/api/payments/{id}")
-    @ResponseBody
-    public ResponseEntity<Void> deletePayment(@PathVariable Long id) {
-        paymentService.deletePayment(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    /**
-     * COUNT - Count all payments
-     * GET http://localhost:8080/api/payments/count
-     */
-    @GetMapping("/api/payments/count")
-    @ResponseBody
-    public ResponseEntity<Long> countPayments() {
-        long count = paymentService.countPayments();
-        return ResponseEntity.ok(count);
-    }
-
-    /**
-     * COUNT - Count payments by status
-     * GET http://localhost:8080/api/payments/count/status/COMPLETED
-     */
-    @GetMapping("/api/payments/count/status/{status}")
-    @ResponseBody
-    public ResponseEntity<Long> countPaymentsByStatus(@PathVariable PaymentStatus status) {
-        long count = paymentService.countPaymentsByStatus(status);
-        return ResponseEntity.ok(count);
-    }
-
 
     // ============= AJAX: валідація рахунку отримувача =============
 
@@ -368,21 +246,6 @@ public class PaymentController {
     }
 
     // ============= DTO CLASSES =============
-
-    @Setter
-    @Getter
-    public static class ExecutePaymentRequest {
-        private Long accountId;
-        private Payment payment;
-    }
-
-    @Setter
-    @Getter
-    public static class TransferRequest {
-        private Long accountId;                 // sender account ID
-        private String recipientAccountNumber;  // recipient account number
-        private Payment payment;                // amount, description, type, etc.
-    }
 
     @Getter
     @Setter

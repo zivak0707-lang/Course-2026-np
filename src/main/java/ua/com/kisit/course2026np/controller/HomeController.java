@@ -100,10 +100,34 @@ public class HomeController {
     @GetMapping("/register")
     public String register() { return "register"; }
 
+    private static final java.util.regex.Pattern EMAIL_PATTERN =
+            java.util.regex.Pattern.compile("^[\\w.+-]+@[\\w-]+(\\.[\\w-]+)+$");
+
     @PostMapping("/register")
     public String handleRegister(@RequestParam String firstName, @RequestParam String lastName,
                                  @RequestParam String email, @RequestParam String password, Model model) {
-        String normalizedEmail = email.trim();
+        String normalizedEmail = email == null ? "" : email.trim();
+        String trimmedFirst = firstName == null ? "" : firstName.trim();
+        String trimmedLast  = lastName  == null ? "" : lastName.trim();
+        String rawPassword  = password  == null ? "" : password;
+
+        if (trimmedFirst.isEmpty() || trimmedLast.isEmpty() || normalizedEmail.isEmpty() || rawPassword.isEmpty()) {
+            model.addAttribute("error", "Усі поля обов'язкові");
+            return "register";
+        }
+        if (trimmedFirst.length() < 2 || trimmedLast.length() < 2) {
+            model.addAttribute("error", "Ім'я та прізвище мають містити щонайменше 2 символи");
+            return "register";
+        }
+        if (!EMAIL_PATTERN.matcher(normalizedEmail).matches()) {
+            model.addAttribute("error", "Невірний формат email");
+            return "register";
+        }
+        if (rawPassword.length() < 4) {
+            model.addAttribute("error", "Пароль має містити щонайменше 4 символи");
+            return "register";
+        }
+
         boolean emailExists = userRepository.findAll().stream()
                 .anyMatch(u -> u.getEmail().equalsIgnoreCase(normalizedEmail));
         if (emailExists) {
@@ -112,10 +136,10 @@ public class HomeController {
             return "register";
         }
         User newUser = new User();
-        newUser.setFirstName(firstName.trim());
-        newUser.setLastName(lastName.trim());
+        newUser.setFirstName(trimmedFirst);
+        newUser.setLastName(trimmedLast);
         newUser.setEmail(normalizedEmail);
-        newUser.setPassword(passwordEncoder.encode(password));
+        newUser.setPassword(passwordEncoder.encode(rawPassword));
         newUser.setRole(UserRole.CLIENT);
         newUser.setIsActive(true);
         userRepository.save(newUser);

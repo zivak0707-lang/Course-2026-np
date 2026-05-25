@@ -52,6 +52,11 @@ public class ClientController {
             securityLog.warn("[UNAUTHENTICATED_ACCESS] Session userId={} not found in DB — session invalidated", userId);
             throw new UserNotAuthenticatedException();
         }
+        if (user.getRole() != UserRole.CLIENT) {
+            securityLog.warn("[ACCESS_DENIED_403] Non-CLIENT user attempted to access client dashboard: email={} id={} role={}",
+                    user.getEmail(), user.getId(), user.getRole());
+            throw new UserNotAuthenticatedException();
+        }
         if (!Boolean.TRUE.equals(user.getIsActive())) {
             session.invalidate();
             securityLog.warn("[BLOCKED_USER_ACCESS] Blocked user attempted access: email={} id={}", user.getEmail(), user.getId());

@@ -412,16 +412,6 @@
                             </div>
                         </div>
 
-                            <!-- Blocked overlay — клікабельна кнопка -->
-                            <#if !card.isActive>
-                            <div class="card-blocked-overlay">
-                                <button class="card-blocked-badge"
-                                        onclick="event.stopPropagation(); openToggleBlockModal(${card.id}, false)">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-                                    BLOCKED
-                                </button>
-                            </div>
-                            </#if>
                     </div><!-- /card perspective -->
                 </#list>
 
@@ -448,13 +438,7 @@
         </div>
         <p class="text-sm text-gray-500 mb-6 text-center">Choose an action to manage your card</p>
 
-        <div class="grid grid-cols-3 gap-4">
-            <div id="action-block" class="action-card" onclick="selectCardAction('block')">
-                <div class="action-card-icon" style="background:#fef3c7; color:#f59e0b;">
-                    <i data-lucide="slash" class="h-6 w-6"></i>
-                </div>
-                <span class="action-card-label">Block Card</span>
-            </div>
+        <div class="grid grid-cols-2 gap-4">
             <div class="action-card" onclick="selectCardAction('pin')">
                 <div class="action-card-icon" style="background:#dbeafe; color:#2563eb;">
                     <i data-lucide="key" class="h-6 w-6"></i>
@@ -538,31 +522,6 @@
             <button type="button" onclick="closeDeleteModal()" class="flex-1 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50">Cancel</button>
             <button type="submit" class="flex-1 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700">Delete</button>
         </form>
-    </div>
-</div>
-
-<!-- MODAL: Block/Unblock -->
-<div id="modal-block" class="modal fixed inset-0 z-50 flex items-center justify-center">
-    <div class="absolute inset-0 bg-black/65 backdrop-blur-sm" onclick="closeModal('modal-block')"></div>
-    <div class="modal-content dark-modal w-full max-w-sm z-10">
-        <div class="dark-modal-header">
-            <h5 id="modal-block-title" class="dark-modal-title">Block Card</h5>
-            <button class="dark-modal-close" onclick="closeModal('modal-block')">
-                <i data-lucide="x" class="h-4 w-4"></i>
-            </button>
-        </div>
-        <div class="dark-modal-body text-center">
-            <div id="modal-block-icon" class="w-14 h-14 rounded-full bg-yellow-500/15 text-yellow-500 flex items-center justify-center mx-auto mb-4">
-                <i data-lucide="slash" class="h-7 w-7"></i>
-            </div>
-            <p id="modal-block-desc" class="text-sm text-gray-400">
-                Are you sure? All transactions will be declined until you unblock it.
-            </p>
-        </div>
-        <div class="dark-modal-footer">
-            <button class="dark-btn dark-btn-ghost" onclick="closeModal('modal-block')">Cancel</button>
-            <button id="btn-confirm-block" class="dark-btn dark-btn-warning" onclick="confirmToggleBlock()">Block Card</button>
-        </div>
     </div>
 </div>
 
@@ -717,72 +676,15 @@
         _cardIsActive = String(isActive) === 'true';
         _currentSpendingLimit = spendingLimit;
         _cardHasPin = String(hasPin) === 'true';
-
-        const label = document.querySelector('#action-block .action-card-label');
-        const icon  = document.querySelector('#action-block i');
-        if (label) label.textContent = _cardIsActive ? 'Block Card' : 'Unblock Card';
-        if (icon)  icon.setAttribute('data-lucide', _cardIsActive ? 'slash' : 'check-circle');
-        if (window.lucide) window.lucide.createIcons();
-
         openModal('modal-card-actions');
     }
 
     function selectCardAction(action) {
         closeModal('modal-card-actions');
         setTimeout(() => {
-            if (action === 'block')       openToggleBlockModal(_activeCardId, _cardIsActive);
-            else if (action === 'pin')    openPinModal(_activeCardId, _cardHasPin);
+            if (action === 'pin')         openPinModal(_activeCardId, _cardHasPin);
             else if (action === 'limit')  openLimitModal(_activeCardId, _currentSpendingLimit);
         }, 200);
-    }
-
-    // ── BLOCK/UNBLOCK ──────────────────────────────────────────
-    function openToggleBlockModal(cardId, isActive) {
-        _activeCardId = cardId;
-        _cardIsActive = isActive;
-
-        const title = document.getElementById('modal-block-title');
-        const desc  = document.getElementById('modal-block-desc');
-        const icon  = document.getElementById('modal-block-icon');
-        const btn   = document.getElementById('btn-confirm-block');
-
-        if (isActive) {
-            if (title) title.textContent = 'Block Card';
-            if (desc)  desc.textContent  = 'Are you sure? All transactions will be declined until you unblock it.';
-            if (icon)  { icon.className = 'w-14 h-14 rounded-full bg-yellow-500/15 text-yellow-500 flex items-center justify-center mx-auto mb-4'; icon.innerHTML = '<i data-lucide="slash" class="h-7 w-7"></i>'; }
-            if (btn)   { btn.textContent = 'Block Card'; btn.className = 'dark-btn dark-btn-warning'; }
-        } else {
-            if (title) title.textContent = 'Unblock Card';
-            if (desc)  desc.textContent  = 'This will restore full functionality. Continue?';
-            if (icon)  { icon.className = 'w-14 h-14 rounded-full bg-green-500/15 text-green-500 flex items-center justify-center mx-auto mb-4'; icon.innerHTML = '<i data-lucide="check-circle" class="h-7 w-7"></i>'; }
-            if (btn)   { btn.textContent = 'Unblock Card'; btn.className = 'dark-btn dark-btn-primary'; }
-        }
-        if (window.lucide) window.lucide.createIcons();
-        openModal('modal-block');
-    }
-
-    async function confirmToggleBlock() {
-        const btn = document.getElementById('btn-confirm-block');
-        if (!btn) return;
-        btn.disabled = true;
-        const origText = btn.textContent;
-        btn.textContent = 'Processing...';
-        try {
-            const res  = await fetch('/cards/' + _activeCardId + '/toggle-block', { method: 'POST' });
-            const data = await res.json();
-            if (data.success) {
-                alert(data.message);
-                closeModal('modal-block');
-                location.reload();
-            } else {
-                alert(data.message || 'Operation failed');
-            }
-        } catch(e) {
-            alert('Network error — please try again.');
-        } finally {
-            btn.disabled = false;
-            btn.textContent = origText;
-        }
     }
 
     // ── CHANGE PIN ─────────────────────────────────────────────
