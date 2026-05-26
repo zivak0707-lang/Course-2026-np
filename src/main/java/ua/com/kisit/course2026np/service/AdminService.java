@@ -143,6 +143,96 @@ public class AdminService {
 
     // ── Accounts ──────────────────────────────────────────────────────────────
 
+    public List<Account> getAllAccountsSortedById() {
+        return accountRepository.findAll().stream()
+                .sorted(Comparator.comparing(Account::getId))
+                .toList();
+    }
+
+    @Transactional
+    public String blockAccount(Long accountId, Long adminId) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+        if (account.getStatus() == AccountStatus.BLOCKED) {
+            throw new IllegalArgumentException("Account is already blocked");
+        }
+        account.block();
+        accountRepository.save(account);
+        log.info("[ADMIN_ACTION] Admin id={} blocked account: id={} number={}",
+                adminId, account.getId(), account.getAccountNumber());
+        securityLog.info("[ACCOUNT_BLOCK] Admin id={} blocked account: id={} number={}",
+                adminId, account.getId(), account.getAccountNumber());
+        return "Account " + account.getAccountNumber() + " has been blocked";
+    }
+
+    public AccountAdminDetailsDto getAccountDetailsForAdmin(Long accountId) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+
+        User owner = (account.getCreditCard() != null) ? account.getCreditCard().getUser() : null;
+        List<Payment> recent = paymentService.getRecentPaymentsByAccount(account, 10);
+
+        AccountAdminDetailsDto dto = new AccountAdminDetailsDto();
+        dto.id            = account.getId();
+        dto.accountNumber = account.getAccountNumber();
+        dto.accountName   = account.getAccountName();
+        dto.status        = account.getStatus() != null ? account.getStatus().name() : null;
+        dto.balance       = account.getBalance();
+        dto.createdAt     = account.getCreatedAt() != null ? account.getCreatedAt().toString() : null;
+        dto.updatedAt     = account.getUpdatedAt() != null ? account.getUpdatedAt().toString() : null;
+        if (owner != null) {
+            dto.ownerId    = owner.getId();
+            dto.ownerName  = ((owner.getFirstName() != null ? owner.getFirstName() : "")
+                            + " "
+                            + (owner.getLastName() != null ? owner.getLastName() : "")).trim();
+            dto.ownerEmail = owner.getEmail();
+        }
+        dto.recentActivity = recent.stream().map(p -> {
+            AccountAdminDetailsDto.PaymentRow row = new AccountAdminDetailsDto.PaymentRow();
+            row.id               = p.getId();
+            row.transactionId    = p.getTransactionId();
+            row.amount           = p.getAmount();
+            row.type             = p.getType() != null ? p.getType().name() : null;
+            row.status           = p.getStatus() != null ? p.getStatus().name() : null;
+            row.description      = p.getDescription();
+            row.senderAccount    = p.getSenderAccount();
+            row.recipientAccount = p.getRecipientAccount();
+            row.createdAt        = p.getCreatedAt() != null ? p.getCreatedAt().toString() : null;
+            return row;
+        }).toList();
+        return dto;
+    }
+
+    @lombok.Getter
+    @lombok.Setter
+    public static class AccountAdminDetailsDto {
+        public Long id;
+        public String accountNumber;
+        public String accountName;
+        public String status;
+        public java.math.BigDecimal balance;
+        public String createdAt;
+        public String updatedAt;
+        public Long ownerId;
+        public String ownerName;
+        public String ownerEmail;
+        public List<PaymentRow> recentActivity;
+
+        @lombok.Getter
+        @lombok.Setter
+        public static class PaymentRow {
+            public Long id;
+            public String transactionId;
+            public java.math.BigDecimal amount;
+            public String type;
+            public String status;
+            public String description;
+            public String senderAccount;
+            public String recipientAccount;
+            public String createdAt;
+        }
+    }
+
     @Transactional
     public String unblockAccount(Long accountId, Long adminId) {
         Account account = accountRepository.findById(accountId)

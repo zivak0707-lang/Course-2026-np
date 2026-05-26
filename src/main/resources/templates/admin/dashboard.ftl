@@ -120,6 +120,7 @@
         <div class="nav-label">Main</div>
         <a href="/admin/dashboard" class="nav-link active"><i class="bi bi-grid"></i> Dashboard</a>
         <a href="/admin/users" class="nav-link"><i class="bi bi-people"></i> Manage Users</a>
+        <a href="/admin/accounts" class="nav-link"><i class="bi bi-wallet2"></i> Accounts</a>
         <a href="/admin/transactions" class="nav-link"><i class="bi bi-arrow-left-right"></i> All Transactions</a>
         <div class="nav-label" style="margin-top:8px">Analytics</div>
         <a href="/admin/reports" class="nav-link"><i class="bi bi-bar-chart-line"></i> Reports</a>

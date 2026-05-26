@@ -262,6 +262,43 @@ public class AdminController {
     //  ACCOUNTS
     // ─────────────────────────────────────────────
 
+    @GetMapping("/accounts")
+    public String accounts(Model model, HttpSession session) {
+        if (isNotAuthenticated(session)) return "redirect:/admin/login";
+        model.addAttribute("accounts", adminService.getAllAccountsSortedById());
+        model.addAttribute("admin", session.getAttribute("adminUser"));
+        return "admin/accounts";
+    }
+
+    @GetMapping("/accounts/{id}/details")
+    @ResponseBody
+    public org.springframework.http.ResponseEntity<?> accountDetails(@PathVariable Long id, HttpSession session) {
+        if (isNotAuthenticated(session)) {
+            return org.springframework.http.ResponseEntity.status(401).build();
+        }
+        try {
+            return org.springframework.http.ResponseEntity.ok(adminService.getAccountDetailsForAdmin(id));
+        } catch (IllegalArgumentException e) {
+            return org.springframework.http.ResponseEntity.status(404).body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/accounts/{id}/block")
+    public String blockAccount(@PathVariable Long id,
+                               RedirectAttributes redirectAttributes,
+                               HttpSession session) {
+        if (isNotAuthenticated(session)) return "redirect:/admin/login";
+        User admin = (User) session.getAttribute("adminUser");
+        Long adminId = admin != null ? admin.getId() : null;
+        try {
+            String msg = adminService.blockAccount(id, adminId);
+            redirectAttributes.addFlashAttribute("successMessage", msg);
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/accounts";
+    }
+
     @PostMapping("/accounts/{id}/unblock")
     public String unblockAccount(@PathVariable Long id,
                                  RedirectAttributes redirectAttributes,
@@ -275,7 +312,7 @@ public class AdminController {
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
-        return "redirect:/admin/dashboard";
+        return "redirect:/admin/accounts";
     }
 
     // ─────────────────────────────────────────────
