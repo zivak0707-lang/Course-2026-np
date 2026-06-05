@@ -21,7 +21,7 @@ import ua.com.kisit.course2026np.service.PaymentService;
 import jakarta.servlet.http.HttpSession;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Random;
+import java.security.SecureRandom;
 
 /**
  * REST контролер для роботи з рахунками
@@ -35,6 +35,10 @@ public class AccountController {
     private final PaymentService paymentService;
     private final CreditCardRepository creditCardRepository;
     private final UserRepository userRepository;
+
+    private static final String SUCCESS_MESSAGE = "successMessage";
+    private static final String ERROR_MESSAGE = "errorMessage";
+    private static final String REDIRECT_ACCOUNTS = "redirect:/dashboard/accounts";
 
     /**
      * CREATE - Створити новий рахунок через веб-інтерфейс
@@ -79,14 +83,14 @@ public class AccountController {
 
             accountService.createAccount(account);
 
-            redirectAttributes.addFlashAttribute("successMessage",
+            redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE,
                     "Рахунок типу " + accountType + " успішно створено!");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage",
+            redirectAttributes.addFlashAttribute(ERROR_MESSAGE,
                     "Помилка при створенні рахунку: " + e.getMessage());
         }
 
-        return "redirect:/dashboard/accounts";
+        return REDIRECT_ACCOUNTS;
     }
 
     /**
@@ -141,12 +145,12 @@ public class AccountController {
     ) {
         try {
             accountService.blockAccount(id);
-            redirectAttributes.addFlashAttribute("successMessage", "Рахунок заблоковано!");
+            redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE, "Рахунок заблоковано!");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage",
+            redirectAttributes.addFlashAttribute(ERROR_MESSAGE,
                     "Помилка при блокуванні: " + e.getMessage());
         }
-        return "redirect:/dashboard/accounts";
+        return REDIRECT_ACCOUNTS;
     }
 
     /**
@@ -160,12 +164,12 @@ public class AccountController {
     ) {
         try {
             accountService.unblockAccount(id);
-            redirectAttributes.addFlashAttribute("successMessage", "Рахунок розблоковано!");
+            redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE, "Рахунок розблоковано!");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage",
+            redirectAttributes.addFlashAttribute(ERROR_MESSAGE,
                     "Помилка при розблокуванні: " + e.getMessage());
         }
-        return "redirect:/dashboard/accounts";
+        return REDIRECT_ACCOUNTS;
     }
 
     /**
@@ -187,12 +191,12 @@ public class AccountController {
             }
 
             accountService.deleteAccount(id);
-            redirectAttributes.addFlashAttribute("successMessage", "Рахунок видалено!");
+            redirectAttributes.addFlashAttribute(SUCCESS_MESSAGE, "Рахунок видалено!");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage",
+            redirectAttributes.addFlashAttribute(ERROR_MESSAGE,
                     "Помилка при видаленні: " + e.getMessage());
         }
-        return "redirect:/dashboard/accounts";
+        return REDIRECT_ACCOUNTS;
     }
 
     // ============= HELPER METHODS =============
@@ -201,7 +205,7 @@ public class AccountController {
      * Генерація номера рахунку на основі типу
      */
     private String generateAccountNumber(String accountType) {
-        Random random = new Random();
+        SecureRandom random = new SecureRandom();
 
         // Enhanced switch expression (Java 14+)
         String prefix = switch (accountType.toLowerCase()) {
