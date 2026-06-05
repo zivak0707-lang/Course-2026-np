@@ -39,6 +39,7 @@ public class AccountController {
     private static final String SUCCESS_MESSAGE = "successMessage";
     private static final String ERROR_MESSAGE = "errorMessage";
     private static final String REDIRECT_ACCOUNTS = "redirect:/dashboard/accounts";
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     /**
      * CREATE - Створити новий рахунок через веб-інтерфейс
@@ -205,8 +206,6 @@ public class AccountController {
      * Генерація номера рахунку на основі типу
      */
     private String generateAccountNumber(String accountType) {
-        SecureRandom random = new SecureRandom();
-
         // Enhanced switch expression (Java 14+)
         String prefix = switch (accountType.toLowerCase()) {
             case "checking" -> "4521"; // Checking accounts
@@ -218,7 +217,7 @@ public class AccountController {
         // Генеруємо решту 16 цифр
         StringBuilder accountNumber = new StringBuilder(prefix);
         for (int i = 0; i < 16; i++) {
-            accountNumber.append(random.nextInt(10));
+            accountNumber.append(RANDOM.nextInt(10));
         }
 
         return accountNumber.toString();

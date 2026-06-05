@@ -283,8 +283,8 @@ function openLimitModal(cardId, currentLimit) {
   _activeCardId = cardId;
 
   const input = document.getElementById('limit-amount');
-  const parsed = parseFloat(currentLimit);
-  input.value = (!isNaN(parsed) && parsed > 0) ? parsed.toFixed(2) : '';
+  const parsed = Number.parseFloat(currentLimit);
+  input.value = (!Number.isNaN(parsed) && parsed > 0) ? parsed.toFixed(2) : '';
 
   openModal('modal-limit');
   setTimeout(() => input.focus(), 120);
@@ -297,8 +297,8 @@ async function submitSpendingLimit() {
 
   document.getElementById('limit-error').style.display = 'none';
 
-  const limit = raw === '' ? 0 : parseFloat(raw);
-  if (isNaN(limit) || limit < 0) {
+  const limit = raw === '' ? 0 : Number.parseFloat(raw);
+  if (Number.isNaN(limit) || limit < 0) {
     _showError('limit-error', 'Please enter a valid positive amount.');
     return;
   }
